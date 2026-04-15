@@ -1,46 +1,36 @@
 <?php
 
 /**
- * Module Notification - Controller
+ * Module Notification - Controller (Thin Controller Pattern)
  * 
- * Controller kế thừa từ \Company\MVC\Controller.
+ * Controller CHỈ làm 3 việc:
+ * 1. Authentication/Authorization (kiểm tra quyền)
+ * 2. Đọc input từ request
+ * 3. Gọi Service → trả response
  * 
- * Các thuộc tính/method có sẵn từ Controller base:
- * - $this->req: Slim\Http\Request - đọc query params, headers
- * - $this->resp: Slim\Http\Response - ghi response body, headers
- * - $this->context: MvcContext - thông tin route hiện tại
- * - $this->input($key, $default): Đọc JSON body từ request
- * - $this->isRest(): Kiểm tra request có phải REST không
- * - $this->outputJSON($data): Trả về JSON response
- * 
- * Quy ước:
- * - Mỗi action tương ứng với 1 route trong router.php
- * - Tham số action trùng với tham số động trong route path
- *   VD: route '/:siteID/rest/notifications/:id' → action getNotification($siteID, $id)
- * - Gọi Auth để kiểm tra quyền trước khi xử lý logic
+ * KHÔNG chứa business logic, validation, hay truy cập DB trực tiếp.
+ * Tất cả logic nằm trong Service layer.
  */
 
 namespace Company\Notification\Controller;
 
 use Company\Auth\Auth;
-use Company\Exception\BadRequestException;
-use Company\Notification\Model\NotificationMapper;
+use Company\Notification\Service\NotificationServiceInterface;
+use Company\Notification\Service\NotificationService;
 
 class NotificationCtrl extends \Company\MVC\Controller {
 
-    /** @var NotificationMapper */
-    protected $mapper;
+    /** @var NotificationServiceInterface */
+    protected $service;
 
     /** @var Auth */
     protected $auth;
 
-    /**
-     * init() được gọi sau __construct, dùng để khởi tạo các dependency.
-     * Override method này thay vì __construct.
-     */
     function init() {
         parent::init();
-        $this->mapper = NotificationMapper::makeInstance();
+        // Inject service thông qua interface
+        // Trong tương lai có thể dùng DI container thay vì new trực tiếp
+        $this->service = new NotificationService();
         $this->auth = Auth::getInstance();
     }
 
@@ -51,27 +41,17 @@ class NotificationCtrl extends \Company\MVC\Controller {
     function getNotifications($siteID) {
         $this->auth->requireLogin();
 
-        $pageNo = $this->req->get('pageNo', 1);
-        $pageSize = $this->req->get('pageSize', 20);
-        $type = $this->req->get('type');
-        $isRead = $this->req->get('isRead');
+        // Controller chỉ đọc input rồi chuyển cho service
+        $filters = [
+            'pageNo'  => $this->req->get('pageNo', 1),
+            'pageSize' => $this->req->get('pageSize', 20),
+            'type'    => $this->req->get('type'),
+            'isRead'  => $this->req->get('isRead'),
+            'userID'  => $this->req->get('userID'),
+        ];
 
-        $mapper = NotificationMapper::makeInstance()
-            ->filterSiteFK($siteID)
-            ->filterType($type)
-            ->filterIsRead($isRead)
-            ->setPage($pageNo, $pageSize);
-
-        $total = 0;
-        $mapper->count($total);
-        $notifications = $mapper->getEntities();
-
-        $this->outputJSON([
-            'data' => $notifications->toArray(),
-            'total' => $total,
-            'pageNo' => $pageNo,
-            'pageSize' => $pageSize
-        ]);
+        $result = $this->service->getNotifications($siteID, $filters);
+        $this->outputJSON($result);
     }
 
     /**
@@ -81,26 +61,37 @@ class NotificationCtrl extends \Company\MVC\Controller {
     function getNotification($siteID, $id) {
         $this->auth->requireLogin();
 
-        $notification = NotificationMapper::makeInstance()
-            ->filterSiteFK($siteID)
-            ->filterID($id)
-            ->getEntityOrFail();
-
+        $notification = $this->service->getNotification($siteID, $id);
         $this->outputJSON($notification);
     }
 
     /**
-     * Tạo mới hoặc cập nhật thông báo
-     * POST/PUT /:siteID/rest/notifications(/:id)
+     * Tạo mới thông báo
+     * POST /:siteID/rest/notifications
      */
-    function updateNotification($siteID, $id = null) {
+    function createNotification($siteID) {
         $this->auth->requireLogin();
         $this->auth->requirePrivilege('manageNotification');
 
         $data = $this->input();
         $data['siteFK'] = $siteID;
 
-        $result = $this->mapper->updateNotification($id, $data);
+        $result = $this->service->createNotification($data);
+        $this->outputJSON($result);
+    }
+
+    /**
+     * Cập nhật thông báo
+     * PUT /:siteID/rest/notifications/:id
+     */
+    function updateNotification($siteID, $id) {
+        $this->auth->requireLogin();
+        $this->auth->requirePrivilege('manageNotification');
+
+        $data = $this->input();
+        $data['siteFK'] = $siteID;
+
+        $result = $this->service->updateNotification($id, $data);
         $this->outputJSON($result);
     }
 
@@ -112,17 +103,8 @@ class NotificationCtrl extends \Company\MVC\Controller {
         $this->auth->requireLogin();
         $this->auth->requirePrivilege('manageNotification');
 
-        NotificationMapper::makeInstance()
-            ->filterSiteFK($siteID)
-            ->filterID($id)
-            ->existsOrFail(new BadRequestException("Notification not found: $id"));
-
-        NotificationMapper::makeInstance()
-            ->filterSiteFK($siteID)
-            ->filterID($id)
-            ->delete();
-
-        $this->outputJSON(result(true));
+        $result = $this->service->deleteNotification($siteID, $id);
+        $this->outputJSON($result);
     }
 
     /**
@@ -132,12 +114,8 @@ class NotificationCtrl extends \Company\MVC\Controller {
     function markAsRead($siteID, $id) {
         $this->auth->requireLogin();
 
-        NotificationMapper::makeInstance()
-            ->filterSiteFK($siteID)
-            ->filterID($id)
-            ->update(['isRead' => 1]);
-
-        $this->outputJSON(result(true));
+        $result = $this->service->markAsRead($siteID, $id);
+        $this->outputJSON($result);
     }
 
     /**
@@ -148,12 +126,19 @@ class NotificationCtrl extends \Company\MVC\Controller {
         $this->auth->requireLogin();
 
         $user = $this->auth->getUser();
-        NotificationMapper::makeInstance()
-            ->filterSiteFK($siteID)
-            ->filterUserID($user->id)
-            ->filterIsRead(0)
-            ->update(['isRead' => 1]);
+        $result = $this->service->markAllAsRead($siteID, $user->id);
+        $this->outputJSON($result);
+    }
 
-        $this->outputJSON(result(true));
+    /**
+     * Đếm thông báo chưa đọc
+     * GET /:siteID/rest/notifications/unread-count
+     */
+    function countUnread($siteID) {
+        $this->auth->requireLogin();
+
+        $user = $this->auth->getUser();
+        $count = $this->service->countUnread($siteID, $user->id);
+        $this->outputJSON(['count' => $count]);
     }
 }

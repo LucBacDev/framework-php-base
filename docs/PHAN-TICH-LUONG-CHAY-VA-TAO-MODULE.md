@@ -398,7 +398,7 @@ Bạn có thể tạo event tùy chỉnh cho module của mình.
 
 ## 6. Cấu trúc thư mục một module
 
-### Module Backend (company/notification)
+### Module Backend (company/notification) - Kiến trúc có Service Layer
 ```
 Module/company/notification/
 ├── composer.json              ← Metadata: tên, version, mô tả
@@ -406,15 +406,34 @@ Module/company/notification/
 ├── router.php                 ← Đăng ký routes
 ├── install.php                ← Script cài đặt DB
 ├── Controller/
-│   └── NotificationCtrl.php   ← Xử lý request/response
+│   └── NotificationCtrl.php   ← THIN: chỉ auth + input + gọi service + output
+├── Service/
+│   ├── NotificationServiceInterface.php  ← Interface định nghĩa operations
+│   └── NotificationService.php           ← Business logic tập trung
 ├── Model/
-│   ├── NotificationMapper.php ← Truy cập database
+│   ├── NotificationMapper.php ← THUẦN: chỉ truy cập database + filter
 │   └── NotificationEntity.php ← Đối tượng dữ liệu
-├── Lib/                       ← Business logic, utility
+├── Lib/                       ← Utility helpers
 │   └── NotificationHelper.php
 └── sql/
     └── notification.table.sql ← Script tạo bảng
 ```
+
+**Luồng dữ liệu qua các tầng:**
+```
+Request → Controller (auth, đọc input) → Service (validate, logic) → Mapper (DB) → Entity
+                                       ← Service (format kết quả) ← Mapper ← DB
+Response ← Controller (outputJSON)     ←
+```
+
+**Quy tắc phân tách trách nhiệm:**
+
+| Tầng | CHỈ làm | KHÔNG làm |
+|------|---------|-----------|
+| **Controller** | Auth, đọc input, gọi service, trả response | Validate, logic, truy cập DB |
+| **Service** | Validate, business logic, gọi mapper, transaction | Đọc HTTP request, trả HTTP response |
+| **Mapper** | Query DB, filter, CRUD | Validate, business logic |
+| **Entity** | Chứa data, computed properties | Logic phức tạp |
 
 ### Module UI (companyui/notification)
 ```
@@ -508,10 +527,43 @@ Quy tắc:
 - Tạo `filterXXX()` methods cho các điều kiện thường dùng
 - Dùng `__FUNCTION__` làm key cho where/param để tránh trùng lặp
 - Luôn return `$this` từ filter methods
+- **KHÔNG chứa business logic** - chỉ CRUD và filter
 
 **Entity** - xem `Module/company/notification/Model/NotificationEntity.php`
 
-### Bước 6: Tạo Controller
+### Bước 6: Tạo Service (Business Logic Layer)
+
+**6a. Tạo Interface** - xem `Module/company/notification/Service/NotificationServiceInterface.php`
+
+```php
+<?php
+namespace Company\Notification\Service;
+
+interface NotificationServiceInterface {
+    function getNotifications($siteID, array $filters = []);
+    function getNotification($siteID, $id);
+    function createNotification(array $data);
+    function updateNotification($id, array $data);
+    function deleteNotification($siteID, $id);
+}
+```
+
+**6b. Tạo Implementation** - xem `Module/company/notification/Service/NotificationService.php`
+
+Quy tắc Service:
+- Implement interface đã khai báo
+- Chứa TẤT CẢ business logic: validation, rules, orchestration
+- Gọi Mapper để truy cập DB
+- KHÔNG biết về HTTP request/response
+- Nhận/trả data thuần (array, string, int)
+
+**Lợi ích:**
+- Controller gọn sạch (thin controller)
+- Logic tập trung 1 chỗ, dễ tìm, dễ sửa
+- Dễ viết unit test (mock interface)
+- Dễ thay đổi implementation (VD: cache, queue, ...)
+
+### Bước 7: Tạo Controller
 
 Xem `Module/company/notification/Controller/NotificationCtrl.php`
 
@@ -520,8 +572,10 @@ Quy tắc:
 - Override `init()` thay vì `__construct()`
 - Tham số action phải match với route params
 - Luôn kiểm tra auth trước khi xử lý
+- **Gọi Service thay vì Mapper trực tiếp**
+- Mỗi action chỉ: auth → input → service → output
 
-### Bước 7: Đăng ký Routes
+### Bước 8: Đăng ký Routes
 
 Xem `Module/company/notification/router.php`
 
@@ -529,8 +583,9 @@ Quy tắc:
 - Sử dụng `Router::getInstance()->addRoute(new MvcContext(...))`
 - Thêm `RouterFilter` để tối ưu performance
 - Route dài hơn sẽ được ưu tiên match trước
+- Đặt route cụ thể (VD: `/read-all`) TRƯỚC route có tham số (VD: `/:id`) để tránh match nhầm
 
-### Bước 8: Tạo install.php
+### Bước 9: Tạo install.php
 
 ```php
 <?php
@@ -541,7 +596,7 @@ $module->initDatabase();
 $module->checkExistsOrCreateModuleRecord();
 ```
 
-### Bước 9: Đăng ký module
+### Bước 10: Đăng ký module
 
 Thêm vào `modules.json`:
 ```json
@@ -552,7 +607,7 @@ Thêm vào `modules.json`:
 }
 ```
 
-### Bước 10: Chạy install
+### Bước 11: Chạy install
 
 ```bash
 docker exec pacs php /var/www/html/install/install.php
@@ -562,18 +617,20 @@ docker exec pacs php /var/www/html/install/install.php
 
 ## 8. Module mẫu: Notification
 
-Module mẫu đã được tạo tại `Module/company/notification/` với đầy đủ các file:
+Module mẫu đã được tạo tại `Module/company/notification/` với kiến trúc **có Service Layer**:
 
-| File | Mô tả |
-|------|-------|
-| `composer.json` | Metadata module |
-| `construct.php` | Đăng ký hooks (hiện tại trống) |
-| `router.php` | 6 REST API endpoints |
-| `Controller/NotificationCtrl.php` | Controller với 6 actions |
-| `Model/NotificationMapper.php` | Mapper với filter methods |
-| `Model/NotificationEntity.php` | Entity class |
-| `sql/notification.table.sql` | Script tạo bảng |
-| `install.php` | Script cài đặt |
+| File | Tầng | Mô tả |
+|------|------|-------|
+| `composer.json` | Config | Metadata module |
+| `construct.php` | Config | Đăng ký hooks |
+| `router.php` | Config | 8 REST API endpoints |
+| `install.php` | Config | Script cài đặt |
+| `Controller/NotificationCtrl.php` | **Controller** | Thin: auth + input + gọi service + output |
+| `Service/NotificationServiceInterface.php` | **Service** | Interface: định nghĩa tất cả operations |
+| `Service/NotificationService.php` | **Service** | Implementation: business logic tập trung |
+| `Model/NotificationMapper.php` | **Model** | Thuần: chỉ DB access + filter methods |
+| `Model/NotificationEntity.php` | **Model** | Entity class |
+| `sql/notification.table.sql` | **Model** | DDL tạo bảng |
 
 ### API Endpoints
 
@@ -581,10 +638,12 @@ Module mẫu đã được tạo tại `Module/company/notification/` với đ�
 |--------|------|--------|-------|
 | GET | `/:siteID/rest/notifications` | getNotifications | Danh sách thông báo (phân trang) |
 | GET | `/:siteID/rest/notifications/:id` | getNotification | Chi tiết 1 thông báo |
-| POST/PUT | `/:siteID/rest/notifications(/:id)` | updateNotification | Tạo/cập nhật |
+| POST | `/:siteID/rest/notifications` | createNotification | Tạo mới |
+| PUT | `/:siteID/rest/notifications/:id` | updateNotification | Cập nhật |
 | DELETE | `/:siteID/rest/notifications/:id` | deleteNotification | Xóa thông báo |
 | POST/PUT | `/:siteID/rest/notifications/:id/read` | markAsRead | Đánh dấu đã đọc |
 | POST/PUT | `/:siteID/rest/notifications/read-all` | markAllAsRead | Đọc tất cả |
+| GET | `/:siteID/rest/notifications/unread-count` | countUnread | Đếm chưa đọc |
 
 ---
 
@@ -594,9 +653,11 @@ Module mẫu đã được tạo tại `Module/company/notification/` với đ�
 - [ ] Tạo `composer.json` (tên, version, mô tả)
 - [ ] Tạo `construct.php` (ít nhất khai báo namespace)
 - [ ] Tạo `sql/*.table.sql` (scripts tạo bảng)
-- [ ] Tạo `Model/*Mapper.php` (kế thừa `\Company\SQL\Mapper`)
+- [ ] Tạo `Model/*Mapper.php` (CHỈ DB access, kế thừa `\Company\SQL\Mapper`)
 - [ ] Tạo `Model/*Entity.php` (kế thừa `\Company\Entity\Entity`)
-- [ ] Tạo `Controller/*Ctrl.php` (kế thừa `\Company\MVC\Controller`)
+- [ ] Tạo `Service/*ServiceInterface.php` (interface cho business logic)
+- [ ] Tạo `Service/*Service.php` (implement interface, chứa business logic)
+- [ ] Tạo `Controller/*Ctrl.php` (THIN, chỉ auth → input → service → output)
 - [ ] Tạo `router.php` (đăng ký routes)
 - [ ] Tạo `install.php` (cài đặt DB)
 - [ ] Thêm vào `modules.json`
