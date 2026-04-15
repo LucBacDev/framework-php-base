@@ -1,0 +1,12 @@
+{
+    "name": "company/notification",
+    "description": "Quản lý thông báo hệ thống",
+    "version": "1.0.0",
+    "type": "library",
+    "authors": [
+        {
+            "name": "LucBacDev",
+            "email": "lucbacit@gmail.com"
+        }
+    ]
+}
