@@ -1,0 +1,278 @@
+####[NOTE]
+  - Khi nâng cấp từ phiên bản PACS cũ lên phiên bản >= v1.9, cần kiểm tra phiên bản redis phải >= 7.4
+
+### v1.10 Ngày 13/01/2026
+- ####[ADD]
+    - Add sharding database
+    - Add multi service manager
+    - Add AliasAe
+    - Cache metadata database
+    - Auto Sync Ris V2
+
+### v1.9.4.1 Ngày 16/10/2025
+- ####[ADD]
+    - Add Wado-RS Bulk data
+
+### v1.9.4 Ngày 09/09/2025
+- ####[ADD]
+    - Add cache metadata qidors series, getStudyTruct
+    - Add download Media action
+    - Update modify study logic
+
+### v1.9.3 Ngày 18/07/2025
+- ####[ADD]
+    - Add cache metadata wado series
+
+### v1.9.2 Ngày 25/06/2025
+- ####[FIX]
+    - Fix modify study(Không tạo StudyIUID mới)
+    - Fix move offline(mở ảnh offline giải nén cả series)
+- ####[ADD]
+    - Thời gian nhận ảnh trên danh sách ca
+    - Thêm AE MASTER đẩy ảnh sang RIS
+    - Khóa ca chụp khi hoàn thành
+    - Dicom ignore viewer
+
+### v1.9.1 Ngày 15/04/2025
+- ####[FIX]
+    - Fix move offline(delete instance_attrs table series)
+    - Fix giao diện theo dõi truy cập
+    - Fix Tool ImportStorage(import file exists)
+- ####[ADD]
+    - Filter_ignore wado metadata
+    - Check file nearline storage(remove online file)
+    - Filter_ignore uploadAI
+
+
+### v1.9 Ngày 04/12/2024
+- ####[ADD]
+    - DicomNet advance log
+    - Cache stow metadata(tăng tốc độ viewer)
+    - Cache stow frame offset(tăng tốc độ viewer)
+    - Giao diện tùy chọn dataset(AgentAe)
+    - Wado URI get frame
+
+### v1.8 Ngày 09/10/2024
+- ####[FIX]
+    - Fix move to trash
+    - Fix restore from trash
+    - Fix modify study
+    - Fix detach study(add modify study)
+    - Fix service_manager(multi process)
+- ####[ADD]
+    - Forward viewer cache
+    - Study log
+    - Setting site
+    - Advance forward
+
+### v1.6.1 Ngày 24/11/2023
+- ####[ADD]
+    - delete table integration
+- ####[ADD]
+    - Wado viewer not image pass viewer
+
+### v1.6 Ngày 23/11/2023
+- ####[FIX]
+    - Fix  addQueueSyncNumberOfSeriesInstances
+    - sync_db_elastic(add lever, endTime)
+    - LTHA done
+    - download anonymizer
+- ####[ADD]
+    - wado viewer Linkeye
+    - verify modify study
+    - filter ortherAe move
+    - update dicomnet 1.4
+
+### v1.5.1 Ngày 14/09/2023
+- ####[FIX]
+    - Fix study_attr
+    - Timeout dicomnet
+
+### v1.5 Ngày 13/09/2023
+- ####[ADD]
+    - Modality AgentAE
+    - Filter KEY_IMAGE
+- ####[FIX]
+    - Lỗi dcmdump \u0000
+    - Lỗi mwl datatime
+    - Lỗi treo cache study
+    - Fix download
+    - Fix query metadata limit record
+- ####[UPDATE]
+
+### v1.4.3 Ngày 25/08/2023
+- ####[ADD]
+    - Class MinervaViewer (thêm Api tạo bản ghi trên viewer)
+- ####[FIX]
+    - Lỗi update sql cho study, series, instances
+    - Sửa thông tin bệnh nhân
+- ####[UPDATE]
+    - Khởi tạo giá trị num_series, num_instances
+    - Tăng max record Elastic lên 10000
+
+### v1.4.2 Ngày 04/08/2023
+- ####[ADD]
+    - Thêm aet giao diện upload study
+    - Giao diện dicomnet log
+- ####[FIX]
+    - Lỗi tràn ram redis  move nearline
+- ####[UPDATE]
+    - Xoá luồng cache thumbnail
+    - Retry message elastic không qua queue
+
+### v1.4.1 Ngày 19/07/2023
+- ####[ADD]
+    - Api tich hop voi Lien thong hinh anh
+    - Add num_series, num_instances vao DB
+    - Ma hoa AI
+    - Tool import from cloud
+    - Move offline to nearline
+    - Support query mysql cho MinervaViewer
+- ####[UPDATE]
+    - Convert code to PHP 8.1
+    - Fix S3 Offline
+
+### v1.4.0 Ngày 05/05/2023
+- ####[ADD]
+    - Merge branch tar to master
+    - Add module company/queue
+- ####[UPDATE]
+    - Optimize count num instances
+    - Fix S3 Offline
+
+### v1.3.4.1 Ngày 31/03/2023
+- ####[UPDATE]
+    - Increase max tag length
+
+### v1.3.4 Ngày 31/03/2023
+- ####[ADD]
+    - Support route api v1
+    - Service monitoring module
+    - LUT tag
+    - Audit log
+    - New modify
+
+### v1.3.3 Ngày 08/02/2023
+- ####[ADD]
+    - Support WebHdfs storage
+    - Update mustNot ElasticSearch
+    - Add autoForward + syncRis (nonDICOM)
+    - StorageClass Attr s3
+
+### v1.3.2 Ngày 19/09/2022
+- ####[ADD]
+    - Tar functions
+    - import media
+    - combine move storage with move nearline
+
+### v1.3.1 Ngày 19/09/2022
+- ####[ADD]
+    - Update dicomnet v1.2.5.1
+    
+### v1.3 Ngày 19/09/2022
+- ####[ADD]
+    - Support Swoole Wado + Qido
+    - Update Query Mwl (add no_value)
+    - Dump file metadata if is multiframe file
+    - Download zip study with transfer syntax
+    
+### v1.2.1.1 Ngày 09/08/2022
+- ####[HotFix]
+    - Sửa GetStudyStruct
+    - Sửa lỗi UI LogServer
+    - Sửa lỗi install log service
+
+### v1.2.1 Ngày 05/08/2022
+- ####[Fix]
+    - Sửa WadoRS cho ISP và Viewer
+    - Sửa lỗi chỉ bắn 1 series sang RIS
+    - Sửa ToolImport query từ SQL
+- ####[ADD]
+    - MWL cho RIS mới
+    - Danh sách ca chưa đồng bộ trên RIS và tự động đồng bộ lại
+    - Hỗ trợ PHP8
+    - Tách/Ghép Study/Series
+    - Swoole Server
+
+### v1.2 Ngày 11/05/2022
+- ####[Fix]
+    - Fix modify
+    - Fix delete
+- ####[ADD]
+    - Module Media
+    - Tăng tốc độ move nearline
+    - Giao diện tool import, copy
+    - Chức năng lưu log
+    - Tăng tốc độ query
+    - Lock file khi modify, delete, move
+    - Dicomnet v1.2.5
+
+### v1.1.9.1 Ngày 23/02/2022
+- ####[Fix]
+    - Export mp4
+
+### v1.1.9 Ngày 15/02/2022
+- ####[Fix]
+    - Export mp4
+    - modality search
+    - loi bao mat
+
+### v1.1.8 Ngày 27/01/2021
+- ####[Fix]
+    - Fix check local IP
+    - fix WadoRS getStudies
+- ####[Add]
+    - change cache type for user
+    - update master node
+    - update getAllModalities function
+    - Add progressive modify
+    - Add SyncDBElastic (API + UI)
+    - Mpeg writer and fix jpeg for multiframe
+
+### v1.1.7 Ngày 24/12/2021
+- ####[Fix]
+    - Fix cache auth
+- ####[Add]
+    - Tự động giải nén Wado URI
+    - Async cho move nearline
+    - Thêm trường modalities và stationNames cho Study ElasticSearch
+    - Update dicomnet v1.2.2
+
+### v1.1.6 Ngày 02/12/2021
+- ####[Fix]
+    - fix AI UI
+- ####[Add]
+    - Add cấu hình response mwl cho từng modality
+    - Update HL7Server: thêm tag request description
+    - Update moveNearline
+    - Update dicomnet v1.2
+    - Optimize framework speed
+
+### v1.1.5 Ngày 18/11/2021
+- ####[Fix]
+    - MoveScp ISP
+- ####[Add]
+    - Move Nearline Storage
+    - Charset setting mwl
+
+### v1.1.4 Ngày 04/11/2021
+- Stow download realtime cho nondicom
+- Fix bao cao
+- Xoa node-modules
+- Nâng cấp dicomnet v1.1
+- Auto remove mwl
+- Cronjob service manager
+
+### v1.1.3 Ngày 03/11/2021
+- fluentd log
+- delete attr dicom tag database
+- sync ai
+- sync ris
+- api move chunk
+- fix frame render
+- them tinh nang stow realtime
+- update vrtk
+- upload metadata, file
+- tich hop MinervaViewer
+- fix zoombie mysql
+- cache offset multiframe

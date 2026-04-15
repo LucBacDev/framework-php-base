@@ -1,0 +1,11 @@
+RewriteEngine On
+RewriteBase /pacs
+
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-l
+RewriteRule ^(.+)$ index.php [QSA,L]
+
+allow from all
+
+#CGIPassAuth on

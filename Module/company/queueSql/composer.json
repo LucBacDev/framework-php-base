@@ -1,0 +1,12 @@
+{
+  "name": "company/queuesql",
+  "description": "queue using sql db",
+  "version": "1.0.0",
+  "type": "library",
+  "authors": [
+    {
+      "name": "TA",
+      "email": "goat91@gmail.com"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+    "setting.header": "Danh sách cấu hình",
+    "setting.placeSearch": "Tìm kiếm",
+    "setting.btnSave": "Lưu lại",
+    "setting.field.name": "Tên",
+    "setting.field.value": "Giá trị",
+    "setting.field.desc": "Mô tả",
+    "settingEdit.notifi.success": "Thành công",
+    "settingIntegrate.header": "Cấu hình tích hợp HIS - RIS",
+    "settingIntegrate.field.integrateType": "Loại tích hợp",
+    "settingIntegrate.field.integrateMode": "Phương thức tích hợp",
+    "settingIntegrate.field.urlGetListRadiologist": "URL lấy danh sách BSCĐ",
+    "settingIntegrate.field.urlGetListClinician": "URL lấy danh sách BSLS",
+    "settingIntegrate.field.urlNotiCaptured": "URL thông báo ca đã chụp",
+    "settingIntegrate.field.urlGetResultToHis": "URL lấy kết quả cho HIS",
+    "settingIntegrate.field.formatData": "Định dạng lại dữ liệu",
+
+    "systemSetting.nav.name": "Cấu hình",
+    "systemSetting.nav.setting": "Cấu hình",
+    "systemSetting.nav.integrate": "Tích hợp"
+
+}

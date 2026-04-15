@@ -1,0 +1,6 @@
+{
+    "name": "companyui/versioninfo",
+    "description": "Quản lý thông tin phiên bản",
+    "version": "1.0.0",
+    "type": "library"
+}

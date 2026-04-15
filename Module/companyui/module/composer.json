@@ -1,0 +1,6 @@
+{
+    "name": "companyui/module",
+    "description": "UI for module manage",
+    "version": "1.0.0",
+    "type": "library"
+}

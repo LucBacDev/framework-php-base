@@ -1,0 +1,5 @@
+{
+  "view": "dir",
+  "view/frontend": "dir",
+  "construct.js": "file"
+}

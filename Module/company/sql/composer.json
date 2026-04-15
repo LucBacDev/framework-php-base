@@ -1,0 +1,16 @@
+{
+    "name": "company/sql",
+    "description": "SQL Lib for framework",
+    "version": "1.0.0",
+    "type": "library",
+    "require": {
+        "../entity": "*",
+        "../../../vendor/adodb/adodb-php": "^5.20"
+    },
+    "authors": [
+        {
+            "name": "Duong Tuan Anh",
+            "email": "anhdt.hn.vn@gmail.com"
+        }
+    ]
+}

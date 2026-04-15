@@ -1,0 +1,12 @@
+{
+  "name": "company/log",
+  "description": "Log",
+  "version": "1.0.0",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Quan",
+      "email": "aaaaa@gmail.com"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+class ModuleModel {
+    getModules(filter = {}) {
+    }
+}

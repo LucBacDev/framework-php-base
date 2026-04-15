@@ -1,0 +1,12 @@
+{
+  "name": "company/service",
+  "description": "service manager",
+  "version": "1.0.0",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Nguyen Van Hinh",
+      "email": "aaaa@gmail.com"
+    }
+  ]
+}

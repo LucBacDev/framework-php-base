@@ -1,0 +1,18 @@
+{
+    "confirm.title": "Xác nhận",
+    "confirm.ok": "Đồng ý",
+    "confirm.cancel": "Hủy bỏ",
+    "alert.ok": "Đóng",
+    "alert.title": "Thông báo",
+    "test": "Xin chào {name}, tuổi {age}",
+    "pagination.pageSize": "Hiển thị",
+    "pagination.itemAndPage": "Bản ghi, trang thứ",
+    "pagination.recordCount": "Tổng số bản ghi",
+    "pagination.pageCount": "Tổng số trang",
+    "date.dateRangeGuide": "Chọn từ ngày đến ngày",
+    "date.dateRangeToday": "Hôm nay",
+    "date.dateRangeYesterday": "Hôm qua",
+    "date.dateRangeAll": "Tất cả",
+    "date.dateRange7day": "7 ngày",
+    "date.dateRange30day": "30 ngày"
+}

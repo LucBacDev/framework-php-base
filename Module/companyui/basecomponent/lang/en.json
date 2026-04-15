@@ -1,0 +1,13 @@
+{
+    "confirm.title": "Confirm",
+    "confirm.ok": "Ok",
+    "confirm.cancel": "Cancel",
+    "alert.ok": "Close",
+    "alert.title": "Notification",
+    "test": "Hello {name}, age {age}",
+    "pagination.pageSize": "Show",
+    "pagination.itemAndPage": "Item, Page number",
+    "pagination.recordCount": "Total records",
+    "pagination.pageCount": "Total pages",
+    "date.dateRangeGuide": "From date to date"
+}

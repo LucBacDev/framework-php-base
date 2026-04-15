@@ -1,0 +1,46 @@
+{
+    "license.header": "Quản lý license",
+    "license.btnSave": "Ghi lại",
+    "license.btnNew": "Thêm mới",
+    "license.btnClose": "Hủy bỏ",
+    "license.btnEnterKey": "Điền license key",
+    "license.btnRefreshKey": "Làm mới license key",
+    "license.btnUploadKey": "Upload license",
+    "license.btnReturnKey": "Trả lại license key",
+    "license.btnDownloadHardwareID": "Tải HardwareID",
+    "license.btnActiveOnline": "Kích hoạt online",
+    "license.btnActiveOffline": "Kích hoạt offline",
+    "license.btnActiveCloud": "Kích hoạt cloud",
+
+    "license.edit.active.header": "Điền license key",
+    "license.validateKey": "Vui lòng điền license key",
+    "license.fileTypeErr": "Không đúng định dạng file",
+    "license.edit.upload.header": "Upload license",
+    "license.edit.upload.note": "Upload license.lic để có thể sử dụng phần mềm.",
+    "license.edit.return.header": "Trả license",
+    "license.edit.return.note": "Bạn có chắc chắn muốn trả lại license? Phần mềm sẽ không hoạt động đầy đủ các chức năng sau khi trả lại license.",
+    "license.btnReturnOnline": "Trả license online",
+    "license.btnReturnOffline": "Trả license offline",
+    "license.btnReturnCloud": "Trả license cloud",
+    "license.enterKey": "Vui lòng điền license key.",
+
+    "update.error": "Lỗi cập nhật",
+    "update.success": "Cập nhật thành công",
+
+    "license.field.licensePackage": "Gói license",
+    "license.field.product": "Ứng dụng",
+    "license.field.status": "Trạng thái",
+    "license.field.issueDate": "Ngày cấp",
+    "license.field.expiryDate": "Ngày hết hạn",
+    "license.field.radiologist": "Số lượng bác sỹ CĐHA",
+    "license.field.clinician": "Số lượng bác sỹ lâm sàng",
+    "license.field.technician": "Số lượng kỹ thuật viên",
+    "license.field.species": "Loại license",
+    "license.field.status.active": "Đã kích hoạt",
+
+    "license.validate.notLicense": "Chưa có thông tin license",
+
+    "license.nav.name": "Cấu hình hệ thống",
+    "license.nav.license": "License"
+
+}

@@ -1,0 +1,9 @@
+!Module/company/cache
+composer.lock
+install.lock
+/nbproject/private/
+.idea
+.DS_Store
+/.vscode
+tests/DicomData
+/Deploy-Dev/.docker-data

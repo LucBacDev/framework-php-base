@@ -1,0 +1,12 @@
+{
+    "name": "company/queue",
+    "description": "Queue",
+    "version": "1.0.0",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Hinh",
+            "email": "aaaaa@gmail.com"
+        }
+    ]
+}

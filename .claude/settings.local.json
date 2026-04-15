@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs grep -l \"export\\\\|Export\")",
+      "Bash(xargs grep -l \"per.*site\\\\|per.*tenant\\\\|siteID.*database\\\\|siteID.*db\")",
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_search",
+      "mcp__plugin_context-mode_context-mode__ctx_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_execute_file"
+    ]
+  }
+}

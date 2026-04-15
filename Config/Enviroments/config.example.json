@@ -1,0 +1,42 @@
+{
+  "PACS_MYSQL_HOST": "mysql:3306",
+  "PACS_MYSQL_USER": "root",
+  "PACS_MYSQL_PASS": "vietrad123",
+  "PACS_DATABASE_NAME": "pacs",
+
+  "SHARDING_ENABLE" : 0,
+  "SHARDING_TABLES" : "pacs_study,pacs_series,pacs_instance,pacs_files,pacs_media,pacs_study_trash,pacs_series_trash,pacs_instance_trash,pacs_media_trash",
+  "SHARD_6965bbe04a173" : "172.16.10.76:3306,pacs_sharding_db,pacs,vietrad123",
+
+  "PACS_ELASTIC_HOSTS": "http://elastic:MyElasticPassword_678@elasticsearch:9200",
+  "PACS_ELASTIC_INDEX_PREFIX": "",
+
+  "PACS_REDIS_HOST": "redis",
+  "PACS_REDIS_PORT":  6379,
+  "PACS_REDIS_PASS": "Redis_92932382832",
+
+  "PACS_KAFKA_BROKER_LIST": "kafka:9092",
+  "PACS_KAFKA_USER": "admin",
+  "PACS_KAFKA_PASS": "Kafka_password123498",
+
+  "PACS_VERSION": "",
+  "PACS_URL_CODE": "",
+
+  "PACS_ZONE_ID": "default",
+  "PACS_TIME_ZONE": "Asia/Bangkok",
+
+  "SECRET_KEY": "vietrad123@!",
+
+  "VIEWER_MASTER": "https://cloud.vnrad.vn",
+  "VIEWER_CACHE": "http://172.16.20.169",
+  "MODALITY_NOT_VIEW_CACHE" : ["MR", "CT"],
+  "MODALITY_EXTRACT_FRAME": ["XA", "US"],
+  "MODALITY_QUERY_METADATA_FULL": ["US"],
+  "UID_PREFIX" : "1.2.840.",
+  "HEADER_ACTIVE" : false,
+  "HEADER_LIST" : [
+    "Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; font-src 'self' https://fonts.gstatic.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; img-src 'self' data:;",
+    "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload",
+    "X-Frame-Options: SAMEORIGIN"
+  ]
+}

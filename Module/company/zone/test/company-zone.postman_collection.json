@@ -1,0 +1,661 @@
+{
+	"info": {
+		"_postman_id": "f829a548-a12b-4a2b-a077-5285f26fc5cb",
+		"name": "company/zone",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "add zone",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "c6415ac0-acc0-4946-8f6e-860162569b68",
+						"exec": [
+							"function uuidv4() {\r",
+							"  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {\r",
+							"    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);\r",
+							"    return v.toString(16);\r",
+							"  });\r",
+							"}\r",
+							"\r",
+							"pm.globals.set(\"zone.name\", uuidv4());"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "0bdbccda-ba94-4671-853a-f85a10e38594",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"var jsonData = pm.response.json();\r",
+							"pm.test(\"Status true\", function () {\r",
+							"    pm.expect(jsonData.status).to.eql(true);\r",
+							"});\r",
+							"\r",
+							"var schema = {\r",
+							"  \"$schema\": \"http://json-schema.org/draft-04/schema#\",\r",
+							"  \"type\": \"object\",\r",
+							"  \"properties\": {\r",
+							"    \"status\": {\r",
+							"      \"type\": \"boolean\"\r",
+							"    },\r",
+							"    \"data\": {\r",
+							"      \"type\": \"object\",\r",
+							"      \"properties\": {\r",
+							"        \"id\": {\r",
+							"          \"type\": \"string\"\r",
+							"        },\r",
+							"        \"name\": {\r",
+							"          \"type\": \"string\"\r",
+							"        }\r",
+							"      },\r",
+							"      \"required\": [\r",
+							"        \"id\",\r",
+							"        \"name\"\r",
+							"      ]\r",
+							"    },\r",
+							"    \"code\": {\r",
+							"      \"type\": \"null\"\r",
+							"    }\r",
+							"  },\r",
+							"  \"required\": [\r",
+							"    \"status\",\r",
+							"    \"data\",\r",
+							"    \"code\"\r",
+							"  ]\r",
+							"};\r",
+							"\r",
+							"pm.test('Schema is valid', function () {\r",
+							"    pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+							"});\r",
+							"\r",
+							"pm.globals.set(\"zone.id\", jsonData.data.id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"{{zone.name}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseURL}}/master/rest/zone/0",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"master",
+						"rest",
+						"zone",
+						"0"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get zone",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "5d2f1a7f-c514-4ed5-8093-96b059544e05",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Check inserted value\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData.id).to.eql(pm.globals.get('zone.id'));\r",
+							"    pm.expect(jsonData.name).to.eql(pm.globals.get('zone.name'));\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/master/rest/zone/{{zone.id}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"master",
+						"rest",
+						"zone",
+						"{{zone.id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "updateZone",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"{{zone.name}}\"\r\n}"
+				},
+				"url": {
+					"raw": "{{baseURL}}/master/rest/zone/{{zone.id}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"master",
+						"rest",
+						"zone",
+						"{{zone.id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "verify zone update",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "45f8b17b-ac43-48cd-8ee6-6ba0cba21463",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Check inserted value\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData.id).to.eql(pm.globals.get('zone.id'));\r",
+							"    pm.expect(jsonData.name).to.eql(pm.globals.get('zone.name'));\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/master/rest/zone/{{zone.id}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"master",
+						"rest",
+						"zone",
+						"{{zone.id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get zones",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "cbe59494-3646-42f5-8ef2-ef00397f7bad",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"var jsonData = pm.response.json();\r",
+							"\r",
+							"var schema = {\r",
+							"  \"$schema\": \"http://json-schema.org/draft-04/schema#\",\r",
+							"  \"type\": \"array\",\r",
+							"  \"items\": [\r",
+							"    {\r",
+							"      \"type\": \"object\",\r",
+							"      \"properties\": {\r",
+							"        \"id\": {\r",
+							"          \"type\": \"string\"\r",
+							"        },\r",
+							"        \"name\": {\r",
+							"          \"type\": \"string\"\r",
+							"        }\r",
+							"      },\r",
+							"      \"required\": [\r",
+							"        \"id\",\r",
+							"        \"name\"\r",
+							"      ]\r",
+							"    }\r",
+							"  ]\r",
+							"};\r",
+							"pm.test('Schema is valid', function () {\r",
+							"    pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/master/rest/zone",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"master",
+						"rest",
+						"zone"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "add contact point",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "3944b452-f6f4-45ff-9904-8a2664b51b37",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"var schema = {\r",
+							"  \"$schema\": \"http://json-schema.org/draft-04/schema#\",\r",
+							"  \"type\": \"object\",\r",
+							"  \"properties\": {\r",
+							"    \"status\": {\r",
+							"      \"type\": \"boolean\"\r",
+							"    },\r",
+							"    \"data\": {\r",
+							"      \"type\": \"object\",\r",
+							"      \"properties\": {\r",
+							"        \"id\": {\r",
+							"          \"type\": \"string\"\r",
+							"        },\r",
+							"        \"address\": {\r",
+							"          \"type\": \"string\"\r",
+							"        },\r",
+							"        \"zoneID\": {\r",
+							"          \"type\": \"string\"\r",
+							"        }\r",
+							"      },\r",
+							"      \"required\": [\r",
+							"        \"id\",\r",
+							"        \"address\",\r",
+							"        \"zoneID\"\r",
+							"      ]\r",
+							"    },\r",
+							"    \"code\": {\r",
+							"      \"type\": \"null\"\r",
+							"    }\r",
+							"  },\r",
+							"  \"required\": [\r",
+							"    \"status\",\r",
+							"    \"data\",\r",
+							"    \"code\"\r",
+							"  ]\r",
+							"};\r",
+							"\r",
+							"var json = pm.response.json();\r",
+							"pm.test('Schema is valid', function () {\r",
+							"    pm.expect(tv4.validate(json, schema)).to.be.true;\r",
+							"});\r",
+							"\r",
+							"pm.globals.set('contactPoint.id', json.data.id);\r",
+							"pm.globals.set('contactPoint.address', json.data.address);\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"zoneID\": \"{{zone.id}}\",\r\n    \"address\": \"{{$randomDomainName}}\"\r\n}"
+				},
+				"url": {
+					"raw": "{{baseURL}}/master/rest/contactPoint",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"master",
+						"rest",
+						"contactPoint"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "add contact point current name",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "e059187e-b0ec-4570-a6b5-c9a5d370f815",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"var schema = {\r",
+							"  \"$schema\": \"http://json-schema.org/draft-04/schema#\",\r",
+							"  \"type\": \"object\",\r",
+							"  \"properties\": {\r",
+							"    \"status\": {\r",
+							"      \"type\": \"boolean\"\r",
+							"    },\r",
+							"    \"data\": {\r",
+							"      \"type\": \"object\",\r",
+							"      \"properties\": {\r",
+							"        \"id\": {\r",
+							"          \"type\": \"string\"\r",
+							"        },\r",
+							"        \"address\": {\r",
+							"          \"type\": \"string\"\r",
+							"        },\r",
+							"        \"zoneID\": {\r",
+							"          \"type\": \"string\"\r",
+							"        }\r",
+							"      },\r",
+							"      \"required\": [\r",
+							"        \"id\",\r",
+							"        \"address\",\r",
+							"        \"zoneID\"\r",
+							"      ]\r",
+							"    },\r",
+							"    \"code\": {\r",
+							"      \"type\": \"null\"\r",
+							"    }\r",
+							"  },\r",
+							"  \"required\": [\r",
+							"    \"status\",\r",
+							"    \"data\",\r",
+							"    \"code\"\r",
+							"  ]\r",
+							"};\r",
+							"\r",
+							"var json = pm.response.json();\r",
+							"pm.test('Schema is valid', function () {\r",
+							"    pm.expect(tv4.validate(json, schema)).to.be.true;\r",
+							"});\r",
+							"\r",
+							"pm.globals.set('contactPoint.id', json.data.id);\r",
+							"pm.globals.set('contactPoint.address', json.data.address);\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "4f1f4e48-fd85-43ad-b2bc-58c1f36d6349",
+						"exec": [
+							"const {Url} = require('postman-collection');\r",
+							"var url = new Url(pm.environment.get(\"baseURL\"));\r",
+							"pm.globals.set(\"contactPoint.myCurrentAddress\", url.host[0]);\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"zoneID\": \"{{zone.id}}\",\r\n    \"address\": \"{{contactPoint.myCurrentAddress}}\"\r\n}"
+				},
+				"url": {
+					"raw": "{{baseURL}}/master/rest/contactPoint",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"master",
+						"rest",
+						"contactPoint"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "detect contact point",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "d49588a3-9d00-473b-8c50-b409a4767833",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"var schema = {\r",
+							"  \"$schema\": \"http://json-schema.org/draft-04/schema#\",\r",
+							"  \"type\": \"object\",\r",
+							"  \"properties\": {\r",
+							"    \"status\": {\r",
+							"      \"type\": \"boolean\"\r",
+							"    },\r",
+							"    \"data\": {\r",
+							"      \"type\": \"object\",\r",
+							"      \"properties\": {\r",
+							"        \"id\": {\r",
+							"          \"type\": \"string\"\r",
+							"        },\r",
+							"        \"address\": {\r",
+							"          \"type\": \"string\"\r",
+							"        },\r",
+							"        \"zoneID\": {\r",
+							"          \"type\": \"string\"\r",
+							"        },\r",
+							"        \"zone\": {\r",
+							"          \"type\": \"object\",\r",
+							"          \"properties\": {\r",
+							"            \"id\": {\r",
+							"              \"type\": \"string\"\r",
+							"            },\r",
+							"            \"name\": {\r",
+							"              \"type\": \"string\"\r",
+							"            }\r",
+							"          },\r",
+							"          \"required\": [\r",
+							"            \"id\",\r",
+							"            \"name\"\r",
+							"          ]\r",
+							"        }\r",
+							"      },\r",
+							"      \"required\": [\r",
+							"        \"id\",\r",
+							"        \"address\",\r",
+							"        \"zoneID\",\r",
+							"        \"zone\"\r",
+							"      ]\r",
+							"    },\r",
+							"    \"code\": {\r",
+							"      \"type\": \"null\"\r",
+							"    }\r",
+							"  },\r",
+							"  \"required\": [\r",
+							"    \"status\",\r",
+							"    \"data\",\r",
+							"    \"code\"\r",
+							"  ]\r",
+							"};\r",
+							"\r",
+							"pm.test('Schema is valid', function () {\r",
+							"    pm.expect(tv4.validate(pm.response.json(), schema)).to.be.true;\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/master/rest/contactPoint/detect",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"master",
+						"rest",
+						"contactPoint",
+						"detect"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "delete zone",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "754efa91-1e90-4014-9dd5-5adfba89bee9",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Status true\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData.status).to.eql(true);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/master/rest/zone/{{zone.id}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"master",
+						"rest",
+						"zone",
+						"{{zone.id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "check delete success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "2d2af766-f9f7-492e-9be7-264c53b016ab",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(404);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/master/rest/zone/{{zone.id}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"master",
+						"rest",
+						"zone",
+						"{{zone.id}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "password",
+				"value": "{{adminPass}}",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "{{adminAcc}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "68a4e9fc-9683-45f8-ac6d-a66f8c20b0b9",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "fdbb4c9b-1f0a-44e4-a4bb-632e6d3fbb4c",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"protocolProfileBehavior": {}
+}

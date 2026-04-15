@@ -1,0 +1,12 @@
+{
+  "name": "company/elasticsearch",
+  "description": "ElasticSearch",
+  "version": "1.0.0",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Duy",
+      "email": "aaaaa@gmail.com"
+    }
+  ]
+}

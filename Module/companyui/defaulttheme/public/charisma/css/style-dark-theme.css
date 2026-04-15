@@ -1,0 +1,70 @@
+
+.theme-dark{
+    background-color: #1E1E1E;
+    color: white;
+}
+.theme-dark .navbar{
+    background-color: #3D3D3E !important;
+}
+.theme-dark .btn-account{
+    background-color:  #3D3D3E;
+    color: #FFFFFF;
+}
+.theme-dark .fa-user-circle{
+    color: #FFFFFF;
+}
+.theme-dark .slt-site{
+    background-color: #474748;
+    color: white;
+    border-color: #505051;
+}
+.theme-dark .btn-nav{
+    background: #4F4F4F;
+}
+.theme-dark .navbar-miner button.active{
+    background-color: #C5C5C5;
+}
+.theme-dark .action-img-dicom .btn-primary{
+    background-color: #155ED1;
+}
+.theme-dark .action-img-dicom .btn-default{
+    background-color: #7B7B7B;
+    color: white;
+}
+.theme-dark .modal-custom .modal-content{
+    background-color: #2B2B2C;
+}
+.theme-dark .modal-custom .close{
+    color: #DFDFDF;
+}
+.theme-dark .modal-custom .modal-header{
+    border-bottom: 1px solid #222223;
+}
+.theme-dark .modal-custom .modal-title{
+    color: #DFDFDF;
+}
+.theme-dark .modal-custom .btn-default{
+    background-color: #7B7B7B;
+    color: white;
+}
+.theme-dark .slt-modal-config{
+    background-color: #363637;
+    color: #E1E1E1;
+    border: 1px solid #404041;
+}
+.theme-dark .content-modal-create-series input{
+    background-color: #404041;
+    color: #E1E1E1;
+    border: 1px solid #404041;
+}
+.theme-dark ul.tabs-study.nav>li span.close:hover, .theme-dark ul.tabs-study.nav>li span.close:active, .theme-dark ul.tabs-study.nav>li span.close:visited {
+    background: #CCC;
+    color: #212121;
+}
+#box-detail-study>.box-header {
+    background-color: #3D3D3E;
+}
+#box-detail-study>.box-header button{
+    background-color: #4F4F4F;
+    border: 0px;
+}

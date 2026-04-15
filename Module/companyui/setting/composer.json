@@ -1,0 +1,6 @@
+{
+    "name": "companyui/setting",
+    "description": "UI for config printing forms",
+    "version": "1.0.0",
+    "type": "library"
+}

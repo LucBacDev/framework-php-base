@@ -1,0 +1,22 @@
+{
+    "setting.header": "Settings",
+    "setting.placeSearch": "Search",
+    "setting.btnSave": "Save",
+    "setting.field.name": "Name",
+    "setting.field.value": "Value",
+    "setting.field.desc": "Description",
+    "settingEdit.notifi.success": "Success",
+    "settingIntegrate.header": "HIS - RIS Intergrate configuation",
+    "settingIntegrate.field.integrateType": "Intergration type",
+    "settingIntegrate.field.integrateMode": "Intergration mode",
+    "settingIntegrate.field.urlGetListRadiologist": "URL Get Radiologists List",
+    "settingIntegrate.field.urlGetListClinician": "URL Get Clinicians List",
+    "settingIntegrate.field.urlNotiCaptured": "URL Notify Captured",
+    "settingIntegrate.field.urlGetResultToHis": "URL Get Result To HIS",
+    "settingIntegrate.field.formatData": "Data format",
+
+    "systemSetting.nav.name": "Setting",
+    "systemSetting.nav.setting": "Setting",
+    "systemSetting.nav.integrate": "Integrate"
+    
+}

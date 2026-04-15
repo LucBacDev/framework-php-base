@@ -1,0 +1,6 @@
+{
+  "Component.js": "file",
+  "PureComponent.js": "file",
+  "js": "dir",
+  "construct.js": "file"
+}

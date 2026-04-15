@@ -1,0 +1,45 @@
+{
+    "license.header": "License manager",
+    "license.btnSave": "Save",
+    "license.btnNew": "New",
+    "license.btnClose": "Cancel",
+    "license.btnEnterKey": "Enter license key",
+    "license.btnRefreshKey": "Renew license key",
+    "license.btnUploadKey": "Upload license",
+    "license.btnReturnKey": "Return license key",
+    "license.btnDownloadHardwareID": "Download HardwareID",
+    "license.btnActiveOnline": "Activate online",
+    "license.btnActiveOffline": "Activate offline",
+    "license.btnActiveCloud": "Activate cloud",
+
+    "license.edit.active.header": "Enter license key",
+    "license.validateKey": "Please enter license key",
+    "license.fileTypeErr": "File type not recognized",
+    "license.edit.upload.header": "Upload license",
+    "license.edit.upload.note": "Upload license.lic to use this product",
+    "license.edit.return.header": "Return license",
+    "license.edit.return.note": "Do you want to return the license? Some features may be disable!",
+    "license.btnReturnOnline": "Return license online",
+    "license.btnReturnOffline": "Return license offline",
+    "license.enterKey": "Please enter license key.",
+
+    "update.error": "Update error",
+    "update.success": "Update success",
+
+    "license.field.licensePackage": "License package",
+    "license.field.product": "Product",
+    "license.field.status": "Status",
+    "license.field.issueDate": "Issue Date",
+    "license.field.expiryDate": "Expiry Date",
+    "license.field.radiologist": "Number of radiologists",
+    "license.field.clinician": "Number of clinicians",
+    "license.field.technician": "Number of technicians",
+    "license.field.species": "License type",
+    "license.field.status.active": "Activated",
+
+    "license.validate.notLicense": "Invalid license",
+
+    "license.nav.name": "System Setting",
+    "license.nav.license": "License"
+    
+}

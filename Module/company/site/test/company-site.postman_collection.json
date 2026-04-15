@@ -1,0 +1,362 @@
+{
+	"info": {
+		"_postman_id": "1ef00350-bde1-422c-846c-18b7aa9febe3",
+		"name": "company/site",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "new site",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "86e3ce61-53de-4e6d-93dc-865c0414d01f",
+						"exec": [
+							"function uuidv4() {\r",
+							"  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {\r",
+							"    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);\r",
+							"    return v.toString(16);\r",
+							"  });\r",
+							"}\r",
+							"\r",
+							"\r",
+							"pm.environment.set(\"site.id\", uuidv4());\r",
+							"pm.environment.set(\"site.name\", uuidv4());\r",
+							"pm.environment.set(\"site.shortname\", uuidv4());\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "e77224e9-5b18-41ed-bfae-947797bd5b8d",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"var jsonData = pm.response.json();\r",
+							"pm.test(\"Status true\", function () {\r",
+							"    pm.expect(jsonData.status).to.eql(true);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Correct ID\", function () {\r",
+							"    pm.expect(jsonData.data.id).to.eql(pm.variables.get(\"site.id\"));\r",
+							"});\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "{{adminPass}}",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "{{adminAcc}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"id\": \"{{site.id}}\",\r\n    \"name\": \"{{site.name}}\",\r\n    \"shortName\": \"{{site.shortname}}\",\r\n    \"active\": 1\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseURL}}/master/master/rest/sites/{{site.id}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"master",
+						"master",
+						"rest",
+						"sites",
+						"{{site.id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "check created site",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "22f9c262-e01e-4671-8747-3542eea10a1d",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Correct id\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData.id).to.eql(pm.environment.get('site.id'));\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Correct name\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData.name).to.eql(pm.environment.get('site.name'));\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Correct shortname\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData.shortName).to.eql(pm.environment.get('site.shortname'));\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/master/master/rest/sites/{{site.id}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"master",
+						"master",
+						"rest",
+						"sites",
+						"{{site.id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get all sites",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "396442d6-f35f-4f81-85be-d487e390dce1",
+						"exec": [
+							"pm.test(\"Status code is 200\", function() {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"const schema = {\r",
+							"  \"$schema\": \"http://json-schema.org/draft-04/schema#\",\r",
+							"  \"type\": \"object\",\r",
+							"  \"properties\": {\r",
+							"    \"rows\": {\r",
+							"      \"type\": \"array\",\r",
+							"      \"items\": [\r",
+							"        {\r",
+							"          \"type\": \"object\",\r",
+							"          \"properties\": {\r",
+							"            \"id\": {\r",
+							"              \"type\": \"string\"\r",
+							"            },\r",
+							"            \"name\": {\r",
+							"              \"type\": \"string\"\r",
+							"            },\r",
+							"            \"shortName\": {\r",
+							"              \"type\": \"string\"\r",
+							"            },\r",
+							"            \"active\": {\r",
+							"              \"type\": \"integer\"\r",
+							"            },\r",
+							"            \"createdDate\": {\r",
+							"              \"type\": \"string\"\r",
+							"            },\r",
+							"            \"willDeleteAt\": {\r",
+							"              \"type\": \"string\"\r",
+							"            }\r",
+							"          },\r",
+							"          \"required\": [\r",
+							"            \"id\",\r",
+							"            \"name\",\r",
+							"            \"shortName\",\r",
+							"            \"active\",\r",
+							"            \"createdDate\",\r",
+							"            \"willDeleteAt\"\r",
+							"          ]\r",
+							"        },\r",
+							"        {\r",
+							"          \"type\": \"object\",\r",
+							"          \"properties\": {\r",
+							"            \"id\": {\r",
+							"              \"type\": \"string\"\r",
+							"            },\r",
+							"            \"name\": {\r",
+							"              \"type\": \"string\"\r",
+							"            },\r",
+							"            \"shortName\": {\r",
+							"              \"type\": \"string\"\r",
+							"            },\r",
+							"            \"active\": {\r",
+							"              \"type\": \"integer\"\r",
+							"            },\r",
+							"            \"createdDate\": {\r",
+							"              \"type\": \"string\"\r",
+							"            },\r",
+							"            \"willDeleteAt\": {\r",
+							"              \"type\": \"string\"\r",
+							"            }\r",
+							"          },\r",
+							"          \"required\": [\r",
+							"            \"id\",\r",
+							"            \"name\",\r",
+							"            \"shortName\",\r",
+							"            \"active\",\r",
+							"            \"createdDate\",\r",
+							"            \"willDeleteAt\"\r",
+							"          ]\r",
+							"        }\r",
+							"      ]\r",
+							"    },\r",
+							"    \"pageNo\": {\r",
+							"      \"type\": \"integer\"\r",
+							"    },\r",
+							"    \"pageSize\": {\r",
+							"      \"type\": \"integer\"\r",
+							"    },\r",
+							"    \"recordCount\": {\r",
+							"      \"type\": \"string\"\r",
+							"    },\r",
+							"    \"pageCount\": {\r",
+							"      \"type\": \"integer\"\r",
+							"    }\r",
+							"  },\r",
+							"  \"required\": [\r",
+							"    \"rows\",\r",
+							"    \"pageNo\",\r",
+							"    \"pageSize\",\r",
+							"    \"recordCount\",\r",
+							"    \"pageCount\"\r",
+							"  ]\r",
+							"};\r",
+							"\r",
+							"var jsonData = pm.response.json();\r",
+							"pm.test('Schema is valid', function() {\r",
+							"    pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/master/master/rest/sites",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"master",
+						"master",
+						"rest",
+						"sites"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "delete site",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "7e3f5488-ec61-4f14-ab41-fd5201386183",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Status true\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData.status).to.eql(true);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/master/master/rest/sites/{{site.id}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"master",
+						"master",
+						"rest",
+						"sites",
+						"{{site.id}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "password",
+				"value": "{{adminPass}}",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "{{adminAcc}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "5c2c3d0e-ee09-4692-8012-20961cd51a03",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "cf356db8-9800-46e6-8cb7-b70a79fb1eb8",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"protocolProfileBehavior": {}
+}

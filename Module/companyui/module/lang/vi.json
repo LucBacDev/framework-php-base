@@ -1,0 +1,11 @@
+{
+  "module.header": "Quản lý Module",
+  "module.placeholder.search": "Tìm kiếm",
+
+  "module.id": "ID",
+  "module.version": "Phiên bản",
+  "module.desc": "Mô tả",
+
+  "module.nav.name": "Cấu hình hệ thống",
+  "module.nav.module": "Quản lý module"
+}

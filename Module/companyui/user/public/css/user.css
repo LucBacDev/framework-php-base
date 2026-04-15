@@ -1,0 +1,37 @@
+.user-list-page .card-nav .card-body{padding: 10px 25px;}
+.user-list-page .card-nav .btn{margin-bottom: 0;}
+.user-list-page .card-nav{margin-bottom: 5px;}
+.user-list-page .card-nav .btn{position: absolute; top: 0; left: 0; height: 39px;}
+.user-list-page table .ti-folder{color: #ff9800;}
+.user-list-page table a.open{display: none;}
+.user-list-page table tr:hover a.open{display: inline-block;}
+.modal-dep-edit .input-group-text{font-size: 12px;}
+#tab-user-role .card-nav {
+    margin-bottom: 5px;
+    margin-top: 20px;
+}
+#tab-user-role .car-body-info-role{
+    padding: 10px;
+}
+#tab-user-role .p-v-20-role{
+    padding-top: 10px;
+}
+#tab-user-role .btn-set-roleDefaut{
+    margin-bottom: 0px;
+    display: none; 
+    padding-top: 4px;
+    padding-bottom: 4px ;
+}
+
+#tab-user-role .btn-set-roleDefaut.hide 
+#tab-user-role .tr-set-roleDefault:hover .btn-set-roleDefaut.hide{
+    display: none; 
+}
+
+#tab-user-role .tr-set-roleDefault:hover .btn-set-roleDefaut:not(.hide){
+    display: block;
+}
+
+.modal.modal-second {
+    z-index: 10000;
+}

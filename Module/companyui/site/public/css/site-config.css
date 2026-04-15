@@ -1,0 +1,23 @@
+.print-editor .modal-body{height: calc(100% - 60px) !important; }
+.print-editor .form-preview .card-body{position: relative; height: calc(100% - 38px); overflow: auto;padding: 0; }
+.print-editor .form-props .card-body,
+.print-editor .item-props .card-body{position: relative; overflow-y: auto; overflow-x: hidden; padding: 0;}
+.print-editor .form-props .card-body{height: calc(40% - 43px); }
+.print-editor .item-props .card-body{height: calc(60% - 43px); }
+.print-editor .card.form-props{margin-bottom: 10px;}
+.print-editor .card{margin: 0;}
+.print-editor .properties-col{width: 300px;}
+.print-editor .properties-col th, 
+.print-editor .properties-col td{width: 50%; padding: 0;}
+.print-editor .properties-col td input[type=text],
+.print-editor .properties-col td input[type=number],
+.print-editor .properties-col td select,
+.print-editor .properties-col td textarea{display: block; border-color: transparent;min-height: 27px; width: 100%;}
+.print-editor .properties-col td input:disabled,
+.print-editor .properties-col td input:read-only,
+.print-editor .properties-col td textarea:disabled,
+.print-editor .properties-col td textarea:read-only{background: #fafafa;}
+.print-editor .properties-col label{padding: 0 10px}
+.print-editor .properties-col td .btn{margin-bottom: 0;}
+.print-layer-text{border: 1px dashed #ccc;}
+.filter-tags{float: right; width: 300px;}

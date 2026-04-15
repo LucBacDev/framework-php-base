@@ -1,0 +1,11 @@
+{
+  "module.header": "Module Management",
+  "module.placeholder.search": "Search",
+
+  "module.id": "ID",
+  "module.version": "Version",
+  "module.desc": "Description",
+
+  "module.nav.name": "System Setting",
+  "module.nav.module": "Module Management"
+}

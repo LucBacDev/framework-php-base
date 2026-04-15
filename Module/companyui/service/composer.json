@@ -1,0 +1,12 @@
+{
+    "name": "companyui/service",
+    "description": "Service component",
+    "version": "1.0.0",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Duong Tuan Anh",
+            "email": "anhdt.hn.vn@gmail.com"
+        }
+    ]
+}

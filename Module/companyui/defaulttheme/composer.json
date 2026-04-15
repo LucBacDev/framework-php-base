@@ -1,0 +1,16 @@
+{
+    "name": "companyui/defaulttheme",
+    "description": "Default theme for framework",
+    "version": "1.0.0",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Duong Tuan Anh",
+            "email": "anhdt.hn.vn@gmail.com"
+        }
+    ],
+    "require": {
+        "company/mvc": "3^",
+        "company/theme": "*"
+    }
+}

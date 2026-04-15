@@ -1,0 +1,20 @@
+- Cấu trúc thư mục export:
++ template.zip                -> Tên file export
+  + TEMPLATE_1                -> Thư mục chứa nội dung của mẫu kết quả thứ nhất.
+    + layouts                 -> Thư mục chứa thông tin của layout.
+	  + layout_1              -> Thư mục chứa nội dung của layout thứ nhất.
+	    + footer.html         -> Nội dung footer của layout thứ nhất.
+		+ header.html         -> Nội dung header của layout thứ nhất.
+		+ layout.html         -> Nội dung layout của layout thứ nhất.
+		+ studyPatInfo.html   -> Nội dung thông tin bệnh nhân, ca chụp
+		+ layoutData.json     -> Chứa nội dung dữ liệu còn lại của layout (tên, ...).
+	  + layout_2              -> Thư mục chứ nội dung của layout thứ hai.
+        + ....                -> Nội dung của thư mục layout thứ 2 (tương tự layout thứ nhất).
+    + conclude.html           -> Nội dung kết luận của mẫu kết quả thứ nhất.
+    + reading.html            -> Nội dung mô tả của mẫu kết quả thứ nhất.
+    + suggest.html            -> Nội dung đề nghị hoặc ghi chú của mẫu kết quả thứ nhất.
+    + metaData.json           -> Chứa nội dung dữ liệu còn lại của mẫu kết quả thứ nhất (tên, ...).
+  + TEMPLATE_2                -> Thư mục chứa nội dung của mẫu kết quả thứ hai.
+    +....                     -> Nội dung của thư mục mẫu kết quả thứ hai.
+  + ....                      -> Các folder của template tiếp theo.
+  + README.md                 -> Chứa nội dung cấu trúc của thư mục export.

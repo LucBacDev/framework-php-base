@@ -1,0 +1,19 @@
+{
+  "queue.nav.name": "Queue",
+  "queue.nav.MessageQueueManager": "MessageQueueManager",
+
+  "queue.header": "MessageQueueManager",
+  "queue.message.topic": "Topic",
+  "queue.message.message_id": "Message ID",
+  "queue.message.body": "Body",
+  "queue.message.response": "Response",
+  "queue.message.created_time": "Created_time",
+
+  "queue.search": "Tìm kiếm",
+  "queue.success": "Thành công",
+  "queue.error": "Thất bại",
+  "queue.retry": "Retry",
+  "queue.retryAll": "Retry All",
+  "queue.save": "Ghi lại",
+  "queue.cancel": "Đóng"
+}

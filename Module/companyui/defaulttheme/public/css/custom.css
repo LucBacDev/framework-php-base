@@ -1,0 +1,525 @@
+body, table{font-size: 14px;color: #333;}
+.left{float: left;}
+.right{float: right;}
+.btn{line-height: 1;}
+.form-group{position: relative;}
+.form-control{line-height: 1; border-color: #bdbdbd;color: #333;}
+.btn:focus{
+    -moz-box-shadow:    inset 0 0 10px #000000;
+    -webkit-box-shadow: inset 0 0 10px #000000;
+    box-shadow:         inset 0 0 10px #000000; 
+}
+.input-group-text{border-color: #bdbdbd; color: #bdbdbd;}
+.checkbox input[type=checkbox] + label:before{border-color: #bdbdbd;}
+.table > tbody > tr > td, .table > tbody > tr > th, .table > tfoot > tr > td, .table > tfoot > tr > th, .table > thead > tr > td, .table > thead > tr > th{
+    line-height: 1.5;
+    padding: 6px;
+}
+[type=checkbox], [type=radio]{
+    width: 15px;
+    height: 15px;
+}
+.table-hover > tbody > tr:hover{background-color: #fff9c4;}
+.nav-tabs > li > a{line-height: 1.5;}
+.form-group label.col-form-label {
+    padding-top: calc(.25rem + 1px);
+    padding-bottom: calc(.25rem + 1px);
+}
+.icon-input > i{padding-top: 5px;}
+.form-group{margin-bottom: 15px;}
+.lbl-required{color: brown;}
+.checkbox{padding: 0;}
+.clear{clear: both;}
+
+.alert-login{position: fixed; top: 65px; left: 0; right: 0; background: rgba(253,50,89, 0.8); color: white; z-index: 9999;text-align: center;}
+.alert-login a{font-weight: bold; text-decoration: underline; color: white;}
+.side-nav .side-nav-inner .side-nav-menu > li.dropdown ul.dropdown-menu > li.active a {
+    background-color: #3E4B5C;
+    color: #fff;
+}
+.hidden{display: none;}
+#modal-alert .modal-body, #modal-confirm .modal-body{font-size: 1.3em;}
+.table .th-wrap{position: relative;}
+.table .th-wrap .right{position: absolute; right: 0; top: 0; width: 20px;font-size: 1.2em; display: none;}
+.table .th-wrap:hover .right,
+.table .th-wrap .right.sorting{display: block;}
+.table .th-wrap.clickable:hover{background: #eee;}
+
+
+.clickable{cursor: pointer;}
+.clickable > *{cursor: pointer;}
+/** fix lỗi khi bật modal có 2 scroll */
+.modal{overflow: auto;}
+.body.has-modal{overflow: hidden;}
+.modal .modal-full{width: 100%; max-width: none;position: fixed;margin: 0;height: 100%;}
+.modal .modal-full .modal-body{position: relative; height: calc(100% - 106px); overflow: auto;}
+
+.card.card-sm .card-header{padding: 5px;min-height: 0;}
+.card.card-sm .card-body{padding: 10px;}
+.card.card-default .card-header{background: #EFF0F1;}
+
+.print-background{background: #E6E6E6;}
+.print-paper{border: 1px solid #C6C6C6; background: white;margin: 20px auto; position: relative;} 
+.print-layer-text{position: absolute;}
+.was-validated .form-control:invalid, .form-control.is-invalid, .was-validated .custom-select:invalid, .custom-select.is-invalid {
+    border-color: #dc3545 !important;
+}
+/*.was-validated .form-control:valid:focus, .form-control.is-valid:focus, .was-validated .custom-select:valid:focus, .custom-select.is-valid:focus {
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}*/
+
+select.form-control:not([size]):not([multiple]) {
+    height: calc(2.25rem - 5px);
+}
+.search-systemSite{
+    border: none !important;
+}
+
+/*Chien: custom css*/
+.form-modal { padding: 0px 180px;}
+
+.card-version {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+#page-content .nav-tabs {
+    width: 200px;
+}
+#tabs-setting-print > li {
+    width: 200px;
+    height: 41px !important;
+}
+/* .tab-vertical > .nav {
+    display: block !important;
+} */
+.nav-tabs {
+    border-bottom: transparent !important;
+}
+
+.left.searchBox.setting-search {
+    margin-top: 20px;
+    margin-left: 20px;
+}
+
+.tab-vertical > .nav-tabs > li {
+    background-color: #e7ebee;
+}
+
+.tab-vertical > .nav-tabs > li > a.active {
+    border-bottom: transparent;
+    border-right-color: transparent;
+    box-shadow: inset 4px 0 0 0 #3B8DD5;
+    color: brown;
+    background-color: #fff;
+    font-weight: 500;
+}
+
+#editor1{
+    height: 300px;
+    border: 1px solid #000;
+    background:#ccc;
+    margin-top: 100px;
+}
+
+/* Style the CKEditor element to look like a textfield */
+.cke_textarea_inline
+{
+    padding: 10px;
+    height: 100px;
+    overflow: auto;
+    border: 1px solid gray;
+    -webkit-appearance: textfield;
+}
+
+.tab-vertical > .nav-tabs{
+    width: 200px;
+}
+
+.tab-stacked-left, .tab-stacked-right {
+    display: table;
+    height: 100%;
+    width: 100%;
+}
+
+.tab-base {
+    margin-bottom: 35px;
+}
+
+.tab-stacked-left .tab-content {
+    border-left-color: transparent;
+    border-radius: 0 0 0 0;
+}
+.tab-stacked-left .tab-content, .tab-stacked-right .tab-content {
+    overflow: hidden;
+}
+.tab-stacked-left .nav-tabs, .tab-stacked-right .nav-tabs, .tab-stacked-left .tab-content, .tab-stacked-right .tab-content {
+    display: table-cell;
+    vertical-align: top;
+}
+.tab-base .tab-content {
+    background-color: #fff;
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
+    padding-left: 20px;
+    padding-bottom: 100px;
+}
+.input-group-prepend > button{
+    padding-left: 10px;
+    padding-right: 10px;
+}
+.tab-content > .form-inline{
+    align-items: normal !important;
+}
+.pad-btm{
+    margin-bottom: 10px;
+}
+.form-inline > .searchBox {
+    position: absolute;
+    right: 0px;
+}
+.extendedSearch {
+    border: 1px solid #CCC;
+    border-radius: 4px;
+    padding: 5px;
+}
+.extendedSearch-label-parent{
+    margin-top: 2.5px;
+    margin-bottom: 2.5px;
+}
+.extendedSearch-choose{
+    margin-bottom: 10px;
+}
+/*label.extendedSearch-label-son {
+    margin-top: -20px;
+    margin-left: 32px;
+}*/
+.extendedSearch-label-parent label.active {
+    font-weight: 600;
+}
+.extendedSearch-label-group{
+    color: #0380c2;
+    font-size: 18px;
+    margin-top: -23px;
+}
+.bodyPart-group{
+    border-top: 1px solid #CCC;
+    padding-top: 10px;
+    margin-bottom: 5px;
+}
+.btn-bodyPart-group{
+    margin-left: 10px;
+}
+.extendedSearch-label-body-group > .extendedSearch-label-group {
+    cursor: default;
+}
+.Chosen .chosen-container-multi .chosen-choices {
+    line-height: 20px;
+    height: calc(2.25rem - 5px);
+    padding: 2px 6px;
+    border-radius: 4px;
+    overflow-y: auto;
+}
+.chosen-container{
+    width: 100% !important;
+}
+div#tab-custom-display {
+    overflow-y: auto;
+    height: 350px;
+}
+
+/* Multiple Select Checkbox component css */
+.extendedSearch-label-parent {
+    display: inline-flex;
+
+    padding: 2px 5px;
+    width: 100%;
+}
+
+.mutiple-select-checkbox {
+    width: 100%;
+}
+
+.mutiple-select-checkbox .extendedSearch-label-son {
+    flex: 1;
+    margin-top: 0;
+}
+
+.divider {
+    height: 1px;
+    margin: 4px 0;
+    overflow: hidden;
+    background-color: #e5e5e5;
+}
+
+.no-display {
+    display: none;
+}
+
+.select-group-name {
+    font-weight: bold;
+    height: 100%;
+    padding-left: 5px;
+}
+
+.select-group .extendedSearch-label-parent {
+    padding-left: 10px;
+}
+
+.fieldSet {
+    border-top: 1px solid #e9eaec;
+}
+.fieldSet legend {
+    width: 40%;
+    font-size: 13px;
+}
+
+.label-note {
+    font-size: 10px;
+    margin-bottom: 20px;
+}
+
+input#slt-site {
+    cursor: context-menu;
+}
+.div-search-site{
+    margin-bottom: 10px;
+}
+.wrapper{
+    margin: 0px auto;
+    width: 428px;
+}
+form#frm-login {
+    margin-block-end: 0em !important;
+}
+
+.login-bg {
+    background-size: cover;
+    background-repeat: no-repeat;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+}
+
+.login-bg .login-wrapper {
+    background: rgb(0 0 0 / 75%);
+    display: flex;
+    align-items: center;
+    flex: 1;
+    height: 100%;
+    flex-direction: column;
+    justify-content: center;
+    font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.logo-icon {
+    width: 120px;
+    height: auto;
+}
+
+.logo-text {
+    font-family: 'TrajanRegular', serif;
+    color: #EB6E4B;
+    font-weight: 500;
+    margin: 0;
+    display: block !important;
+    font-size: 31px;
+    padding-left: 12px;
+    padding-top: 20px;
+}
+
+.user-select-none {
+    user-select: none;
+}
+
+form#frm-login input {
+    height: 38px;
+    background: #f9f9f9;
+    border: 1px solid #bdbdbd;
+    border-radius: 2rem;
+    text-align: center;
+}
+
+form#frm-login input::placeholder {
+    color: #EB6E4B;
+}
+
+form#frm-login input:focus::placeholder {
+    color: transparent;
+}
+
+button.btn.btn-block.btn-lg.btn-gradient-success {
+    margin-bottom: 0px;
+}
+.card-login{
+    background: transparent;
+    border: none;
+    margin-bottom: 0;
+}
+
+.btn-login-success{
+    float: none;
+    display: block;
+    height: 36px;
+    line-height: 36px;
+    padding: 0;
+    text-align: center;
+    width: 100%;
+    background: #EB6E4B;
+    border-color: #EB6E4B;
+    margin-top: 20px;
+    font-size: 14px;
+    border-radius: 2em;
+    color: white;
+}
+
+.support {
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.link-forget-pass{
+ float: right;
+ margin-bottom: 20px;
+}
+.forget {
+    padding-bottom: 10px;
+    color: #333;
+    font-size: 17px;
+    margin-top: 10px;
+}
+.left-addon .fa {
+    left: 2px;
+    bottom: 3px;
+}
+.inner-addon .fa {
+    position: absolute;
+    padding: 10px;
+    pointer-events: none;
+    color: #000000;
+    font-weight: bold;
+    font-size: 16px;
+}
+.left-addon input {
+    padding-left: 30px;
+}
+
+.language {
+    text-align: center;
+    margin-bottom: 10px
+}
+
+.label-language {
+    color: #fff;
+    font-size: 14px;
+    border-color: #1F262D;
+    margin-right: 5px;
+}
+
+.lang-switch {
+    font-size: 14px;
+    border-radius: 3px;
+    padding: 1px 5px;
+    outline: none;
+}
+
+.change-language {
+    text-align: center;
+}
+.fr-login-language a{
+    color: #BFBFBF;
+}
+.fr-login-language a.active{
+    color: #262626;
+}
+.copy-right {
+    position: absolute;
+    bottom: 20px;
+    margin-top: 30px;
+    text-align: center;
+    color: #fff;
+}
+
+.copy-right span {
+    font-size: 15px;
+}
+
+.container .wrapper .logo img {
+    height: 90px;
+}
+.container .wrapper .logo img.logo-name {
+    height: 50px;
+    margin-top: 20px;
+}
+.container .login-a {
+
+}
+.logo {
+    margin: auto;
+    text-align: center;
+}
+
+.datepicker-inline{
+    padding: 0;
+    width: 194px;
+}
+.datepicker-inline tfoot{
+    display: none;
+}
+.datepicker table tr th, .datepicker table tr td{
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+}
+.date-range-inline .btn-default{
+    padding-right: 5px;
+    padding-left: 5px;
+}
+.date-range-inline{
+    text-align: center;
+}
+.date-range-inline .datepicker-inline{
+    float: left;
+    border: none;
+}
+.date-range-inline .datepicker-inline:first-child{
+    margin-right: 10px;
+}
+.dateRangeGuide{
+    font-weight: bold;
+    text-align: center;
+}
+.btn-default:active:hover, .btn-default:active:focus{
+    color: gray;
+}
+.btn-default{
+    color: #262626;
+    font-weight: normal;
+    border-color: #B5B5B5;
+}
+.btn-default:hover, btn-default:focus{
+    background-color: #155DD1;
+    color: white;
+    border-color: #B5B5B5;
+}
+
+.datepicker table tr td span.active:active, .datepicker table tr td span.active:hover:active, .datepicker table tr td span.active.disabled:active, .datepicker table tr td span.active.disabled:hover:active, .datepicker table tr td span.active.active, .datepicker table tr td span.active:hover.active, .datepicker table tr td span.active.disabled.active, .datepicker table tr td span.active.disabled:hover.active, .datepicker table tr td span.active.active:hover, .datepicker table tr td span.active:hover.active:hover, .datepicker table tr td.active:active, .datepicker table tr td.active.highlighted:active, .datepicker table tr td.active.active, .datepicker table tr td.active.highlighted.active, .datepicker table tr td.active:active:hover, .datepicker table tr td.active.highlighted:active:hover, .datepicker table tr td.active.active:hover, .datepicker table tr td.active.highlighted.active:hover, .datepicker table tr td.active:active:focus, .datepicker table tr td.active.highlighted:active:focus, .datepicker table tr td.active.active:focus, .datepicker table tr td.active.highlighted.active:focus, .datepicker table tr td.active:active.focus, .datepicker table tr td.active.highlighted:active.focus, .datepicker table tr td.active.active.focus, .datepicker table tr td.active.highlighted.active.focus{
+    background: #155DD1 !important;
+}
+
+.side-nav-inner img {
+    position: absolute;
+    left: 70px;
+    bottom: 20px;
+    width: 80px;
+}
+.modal-dialog {
+    border: 1px solid #ccc;
+}

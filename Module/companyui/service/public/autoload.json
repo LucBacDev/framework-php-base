@@ -1,0 +1,6 @@
+{
+    "model": "dir",
+    "view": "dir",
+    "view/ServiceDetail": "dir",
+    "construct.js": "file"
+}

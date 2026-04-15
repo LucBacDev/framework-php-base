@@ -1,0 +1,188 @@
+version: '2'
+services:
+  zookeeper:
+    image: hinhct/zookeeper:3.6.3
+    container_name: zookeeper
+    restart: unless-stopped
+    environment:
+      - ZOO_ENABLE_AUTH=yes
+      - ZOO_SERVER_USERS=kafka
+      - ZOO_SERVER_PASSWORDS=Kafka_password123498
+      - ZOO_CLIENT_USERS=kafka
+      - ZOO_CLIENT_PASSWORDS=Kafka_password123498
+    ports:
+      - 2181:2181
+    volumes:
+      - ${DOCKER_ROOT:-/docker}/local/zookeeper:/bitnami/zookeeper
+    networks:
+      - pacsnet
+    logging:
+      options:
+        max-size: 50m
+
+  kafka:
+    image: hinhct/kafka:2.8.0
+    container_name: kafka
+    restart: unless-stopped
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=SASL_PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=SASL_PLAINTEXT://kafka:9092
+      - KAFKA_CFG_SECURITY_INTER_BROKER_PROTOCOL=SASL_PLAINTEXT
+      - KAFKA_CFG_SASL_MECHANISM_INTER_BROKER_PROTOCOL=PLAIN
+      - KAFKA_CFG_SASL_ENABLED_MECHANISMS=PLAIN
+      - KAFKA_ZOOKEEPER_USER=kafka
+      - KAFKA_ZOOKEEPER_PASSWORD=Kafka_password123498
+      - KAFKA_INTER_BROKER_USER=ibadmin
+      - KAFKA_INTER_BROKER_PASSWORD=Kafka_password123498
+      - KAFKA_BROKER_USER=admin
+      - KAFKA_BROKER_PASSWORD=Kafka_password123498
+      - "KAFKA_HEAP_OPTS=-Xms1g -Xmx1g"
+    ports:
+      - 9092:9092
+    depends_on:
+      - zookeeper
+    volumes:
+      - '${DOCKER_ROOT:-/docker}/share/kafka/secrets/kafka_server_jaas.conf:/opt/bitnami/kafka/config/kafka_jaas.conf'
+      - ${DOCKER_ROOT:-/docker}/local/kafka:/bitnami/kafka
+    networks:
+      - pacsnet
+    logging:
+      options:
+        max-size: 50m
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.12.1
+    restart: unless-stopped
+    container_name: elasticsearch
+    environment:
+      - cluster.name=docker-cluster
+      - "ES_JAVA_OPTS=-Xms2048m -Xmx2048m"
+      - bootstrap.memory_lock=true
+      - ELASTIC_PASSWORD=MyElasticPassword_678
+      - ELASTIC_USERNAME=elastic
+      - xpack.security.enabled=true
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ${DOCKER_ROOT:-/docker}/local/elastic:/usr/share/elasticsearch/data
+    ports: [ '0.0.0.0:9200:9200', '0.0.0.0:9300:9300' ]
+    networks: [ 'pacsnet' ]
+    logging:
+      options:
+        max-size: 50m
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.12.1
+    container_name: kibana
+    restart: unless-stopped
+    ports: [ '0.0.0.0:5601:5601' ]
+    environment:
+      - ELASTICSEARCH_URL="http://elasticsearch:9200"
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=MyElasticPassword_678
+      - discovery.type=single-node
+    networks: [ 'pacsnet' ]
+    depends_on: [ 'elasticsearch' ]
+    logging:
+      options:
+        max-size: 50m
+  redis:
+    image: 'bitnami/redis:latest'
+    restart: unless-stopped
+    container_name: redis
+    environment:
+      - REDIS_PASSWORD=Redis_92932382832
+      - REDIS_AOF_ENABLED=no
+    ports:
+      - '6379:6379'
+    networks:
+      - pacsnet
+    logging:
+      options:
+        max-size: 50m
+
+  mysql:
+    image: hopitio/mariadb:2
+    restart: unless-stopped
+    container_name: mysql
+    ports:
+      - 3306:3306
+    volumes:
+      - ${DOCKER_ROOT:-/docker}/local/mysql:/var/lib/mysql
+      - ${DOCKER_ROOT:-/docker}/local/mysql-log:/var/log/mysql
+    networks:
+      - pacsnet
+    logging:
+      options:
+        max-size: 50m
+
+  pacs:
+    image: hinhct/phpmed:v1.9
+    restart: unless-stopped
+    environment:
+      - KAFKA_OPTS=-Djava.security.auth.login.config=/etc/kafka/secrets/kafka_server_jaas.conf
+      - PACS_MYSQL_HOST=$PACS_MYSQL_HOST
+      - PACS_MYSQL_USER=$PACS_MYSQL_USER
+      - PACS_MYSQL_PASS=$PACS_MYSQL_PASS
+      - PACS_DATABASE_NAME=$PACS_DATABASE_NAME
+      - PACS_ELASTIC_HOSTS=$PACS_ELASTIC_HOSTS
+      - PACS_REDIS_HOST=$PACS_REDIS_HOST
+      - PACS_REDIS_PORT=$PACS_REDIS_PORT
+      - PACS_REDIS_PASS=$PACS_REDIS_PASS
+      - PACS_KAFKA_BROKER_LIST=$PACS_KAFKA_BROKER_LIST
+      - PACS_VERSION=$PACS_VERSION
+      - PACS_URL_CODE=$PACS_URL_CODE
+      - PACS_ZONE_ID=$PACS_ZONE_ID
+    container_name: pacs
+    ports:
+      - 23:22/tcp
+      - 2575:7777/tcp
+      - 8080:80/tcp
+      - 4242:4242/tcp
+      - 9000:9000/tcp
+    volumes:
+      - ${PROJECT_PATH:-/docker/share/pacs}:/var/www/html
+      - ${DOCKER_ROOT:-/docker}/share/kafka/secrets:/etc/kafka/secrets
+      - ${DOCKER_NETWORK_DIR:-/etc/netplan}:/host/network
+      - ${DOCKER_ROOT:-/docker}/local/pacs/server:/pacs/server
+    tmpfs:
+      - /tmpfs:rw,size=2G
+    depends_on: [ 'mysql', 'redis', 'kafka' ]
+    networks:
+      - pacsnet
+    logging:
+      options:
+        max-size: 50m
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    restart: unless-stopped
+    ports:
+      - 8432:8080
+    environment:
+      KAFKA_CLUSTERS_0_NAME: Kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_MECHANISM: PLAIN
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG: |
+        org.apache.kafka.common.security.plain.PlainLoginModule required
+        username="admin"
+        password="Kafka_password123498";
+    depends_on:
+      - kafka
+      - zookeeper
+    networks:
+      - pacsnet
+    logging:
+      options:
+        max-size: 50m
+
+networks:
+  pacsnet:

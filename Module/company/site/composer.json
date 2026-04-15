@@ -1,0 +1,12 @@
+{
+    "name": "company/site",
+    "description": "Quan ly can bo nhan vien",
+    "version": "1.0.0",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Duong Tuan Anh",
+            "email": "anhdt.hn.vn@gmail.com"
+        }
+    ]
+}

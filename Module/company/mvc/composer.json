@@ -1,0 +1,20 @@
+{
+    "name": "company/mvc",
+    "description": "MVC base class",
+    "version": "3.0.0",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Duong Tuan Anh",
+            "email": "anhdt.hn.vn@gmail.com"
+        }
+    ],
+    "require": {
+        "../../../vendor/slim/slim": "~2.0"
+    },
+    "autoload": {
+        "files": [
+          "autoload.php"
+        ]
+    }
+}

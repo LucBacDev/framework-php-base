@@ -1,0 +1,12 @@
+{
+    "name": "company/vrtar",
+    "description": "Tar",
+    "version": "1.0.0",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Nguyen Van Hinh",
+            "email": ""
+        }
+    ]
+}
