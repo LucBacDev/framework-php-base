@@ -5,7 +5,7 @@ App.Component.trigger('Module', modules);
 Lang.load('companyui', 'department').then(() => {
     let navs = App.Component.getEventState('PageNavigator') || [];
 
-    if (App.getUser().hasPrivilege('manageDepartment')) {
+    if (App.isFullControl) {
         navs.push({
             'name': Lang.t("dep.nav.name"), 'icon': 'ti ti-home',
             'module': "companyui/department",
