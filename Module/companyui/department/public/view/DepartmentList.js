@@ -106,7 +106,7 @@ class DepartmentList extends PureComponent {
 
     render() {
         return (
-            <div>
+            <AdminLayout>
                 <PageHeader>{Lang.t('dep.header')}</PageHeader>
                 <div className="card">
                     <div className="card-body">
@@ -207,7 +207,7 @@ class DepartmentList extends PureComponent {
                     </div>
                 </div>
                 <DepartmentEdit />
-            </div>
+            </AdminLayout>
         );
     }
 }

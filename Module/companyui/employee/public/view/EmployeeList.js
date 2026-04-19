@@ -100,7 +100,7 @@ class EmployeeList extends PureComponent {
 
     render() {
         return (
-            <div>
+            <AdminLayout>
                 <PageHeader>{Lang.t('emp.header')}</PageHeader>
                 <div className="card">
                     <div className="card-body">
@@ -181,7 +181,7 @@ class EmployeeList extends PureComponent {
                     </div>
                 </div>
                 <EmployeeEdit />
-            </div>
+            </AdminLayout>
         );
     }
 }
