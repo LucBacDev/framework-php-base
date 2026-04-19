@@ -52,7 +52,7 @@ class EmployeeList extends PureComponent {
     }
 
     deleteEmployee(emp) {
-        Confirm.open(Lang.t('emp.confirm.delete') + ' <b>' + emp.fullname + '</b>?').then((resp) => {
+        Confirm.open(Lang.t('emp.confirm.delete') + ' ' + emp.fullname + '?').then((resp) => {
             if (resp) {
                 this.empModel.deleteEmployee(emp.id).then((res) => {
                     if (res.status) {
@@ -87,7 +87,7 @@ class EmployeeList extends PureComponent {
     }
 
     renderStatus(emp) {
-        if (emp.active) {
+        if (emp.active == 1) {
             return <span className="badge badge-success">{Lang.t('emp.status.active')}</span>;
         }
         return <span className="badge badge-secondary">{Lang.t('emp.status.inactive')}</span>;
@@ -167,9 +167,9 @@ class EmployeeList extends PureComponent {
                                                     </button>
                                                     <button className="dropdown-item" type="button"
                                                         onClick={() => { this.toggleActive(emp); }}>
-                                                        {emp.active ? Lang.t('emp.btnDeactivate') : Lang.t('emp.btnActivate')}
+                                                        {emp.active == 1 ? Lang.t('emp.btnDeactivate') : Lang.t('emp.btnActivate')}
                                                     </button>
-                                                    {!emp.active && !emp.noDelete &&
+                                                    {emp.active != 1 && !emp.noDelete &&
                                                         <button className="dropdown-item text-danger" type="button"
                                                             onClick={() => { this.deleteEmployee(emp); }}>
                                                             {Lang.t('emp.btnDelete')}

@@ -47,7 +47,7 @@ class DepartmentList extends PureComponent {
     }
 
     deleteDepartment(dep) {
-        Confirm.open(Lang.t('dep.confirm.delete') + ' <b>' + dep.name + '</b>?').then((resp) => {
+        Confirm.open(Lang.t('dep.confirm.delete') + ' ' + dep.name + '?').then((resp) => {
             if (resp) {
                 this.depModel.deleteDepartment(dep.id).then((res) => {
                     if (res.status) {
@@ -104,7 +104,7 @@ class DepartmentList extends PureComponent {
     }
 
     renderStatus(dep) {
-        if (dep.active) {
+        if (dep.active == 1) {
             return <span className="badge badge-success">{Lang.t('dep.status.active')}</span>;
         }
         return <span className="badge badge-secondary">{Lang.t('dep.status.inactive')}</span>;
@@ -181,9 +181,9 @@ class DepartmentList extends PureComponent {
                                                     </button>
                                                     <button className="dropdown-item" type="button"
                                                         onClick={() => { this.toggleActive(dep); }}>
-                                                        {dep.active ? Lang.t('dep.btnDeactivate') : Lang.t('dep.btnActivate')}
+                                                        {dep.active == 1 ? Lang.t('dep.btnDeactivate') : Lang.t('dep.btnActivate')}
                                                     </button>
-                                                    {!dep.active && !dep.noDelete &&
+                                                    {dep.active != 1 && !dep.noDelete &&
                                                         <button className="dropdown-item text-danger" type="button"
                                                             onClick={() => { this.deleteDepartment(dep); }}>
                                                             {Lang.t('dep.btnDelete')}
