@@ -5,6 +5,8 @@
     "emp.btnNew": "Thêm nhân sự",
     "emp.btnEdit": "Chỉnh sửa",
     "emp.btnDelete": "Xóa",
+    "emp.btnDeactivate": "Ngừng hoạt động",
+    "emp.btnActivate": "Kích hoạt",
     "emp.btnSave": "Ghi lại",
     "emp.btnClose": "Hủy bỏ",
     "emp.placeSearch": "Tìm nhân sự",

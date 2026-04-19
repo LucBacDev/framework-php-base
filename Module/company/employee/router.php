@@ -13,6 +13,11 @@ R::getInstance()->addRoute(
     new MVC('/:siteID/rest/nhansu/phongban/:depID', 'GET', $ctrl, 'getEmployeesByDep', new RouterFilter("/rest/nhansu"))
 );
 
+// Cập nhật trạng thái active/inactive
+R::getInstance()->addRoute(
+    new MVC('/:siteID/rest/nhansu/:id/active', 'POST,PUT', $ctrl, 'updateStatusActive', new RouterFilter("/rest/nhansu"))
+);
+
 // Tạo mới / cập nhật nhân sự
 R::getInstance()->addRoute(
     new MVC('/:siteID/rest/nhansu(/:id)', 'POST,PUT', $ctrl, 'updateEmployee', new RouterFilter("/rest/nhansu"))

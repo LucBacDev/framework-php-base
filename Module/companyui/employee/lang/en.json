@@ -5,6 +5,8 @@
     "emp.btnNew": "New Employee",
     "emp.btnEdit": "Edit",
     "emp.btnDelete": "Delete",
+    "emp.btnDeactivate": "Deactivate",
+    "emp.btnActivate": "Activate",
     "emp.btnSave": "Save",
     "emp.btnClose": "Cancel",
     "emp.placeSearch": "Search employee",

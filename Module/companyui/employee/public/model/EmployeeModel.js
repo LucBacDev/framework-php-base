@@ -45,4 +45,12 @@ class EmployeeModel {
             'method': 'DELETE'
         });
     }
+
+    toggleActive(id) {
+        var url = App.url('/:siteID/rest/nhansu/:id/active', {siteID: App.siteID, id: id});
+        return $.rest({
+            'url': url,
+            'method': 'put'
+        });
+    }
 }

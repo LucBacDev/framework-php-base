@@ -119,6 +119,24 @@ class EmployeeCtrl extends \Company\MVC\Controller {
     }
 
     /**
+     * Cập nhật trạng thái active/inactive
+     * POST/PUT /:siteID/rest/nhansu/:id/active
+     */
+    function updateStatusActive($siteID, $id) {
+        try {
+            $this->auth->setSiteID($siteID);
+            $this->auth->requireSite($siteID);
+            $this->auth->requireAdmin();
+
+            $result = $this->empMapper->updateStatusActive($siteID, $id);
+            $this->resp->setBody(json_encode($result));
+        } catch (\Exception $e) {
+            $this->resp->setStatus(400);
+            $this->resp->setBody(json_encode(['result' => false, 'message' => $e->getMessage()]));
+        }
+    }
+
+    /**
      * Lấy danh sách nhân sự theo phòng ban
      * GET /:siteID/rest/nhansu/phongban/:depID
      */

@@ -61,6 +61,14 @@ class EmployeeList extends PureComponent {
         });
     }
 
+    toggleActive(emp) {
+        this.empModel.toggleActive(emp.id).then(() => {
+            this.getEmployees();
+        }).catch((xhr) => {
+            Alert.open(xhr.responseJSON ? xhr.responseJSON.message : Lang.t('emp.error.update'));
+        });
+    }
+
     handleSearch() {
         this.state.filter.pageNo = 1;
         this.getEmployees();
@@ -150,6 +158,10 @@ class EmployeeList extends PureComponent {
                                                     <button className="dropdown-item" type="button"
                                                         onClick={() => { this.editEmployee(emp); }}>
                                                         {Lang.t('emp.btnEdit')}
+                                                    </button>
+                                                    <button className="dropdown-item" type="button"
+                                                        onClick={() => { this.toggleActive(emp); }}>
+                                                        {emp.active ? Lang.t('emp.btnDeactivate') : Lang.t('emp.btnActivate')}
                                                     </button>
                                                     {!emp.active && !emp.noDelete &&
                                                         <button className="dropdown-item text-danger" type="button"

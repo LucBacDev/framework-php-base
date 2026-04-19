@@ -164,6 +164,30 @@ class EmployeeMapper extends \Company\SQL\Mapper {
         $this->completeTransOrFail();
     }
 
+    /**
+     * Cập nhật trạng thái active
+     */
+    function updateStatusActive($siteID, $id) {
+        $emp = $this->makeInstance()
+            ->filterSiteFK($siteID)
+            ->filterID($id)
+            ->filterActive(null)
+            ->filterDeleted(0)
+            ->getEntity();
+
+        if (!$emp->id) {
+            throw new E\BadRequestException("Nhân sự không tồn tại");
+        }
+
+        $newActive = $emp->active ? 0 : 1;
+        $this->makeInstance()
+            ->filterID($id)
+            ->filterActive(null)
+            ->update(['active' => $newActive]);
+
+        return result(true, ['active' => $newActive]);
+    }
+
     // ============================================================
     // FILTER METHODS
     // ============================================================
