@@ -199,6 +199,12 @@ class DepartmentMapper extends \Company\SQL\Mapper {
             ->filterActive(null)
             ->update(['active' => $newActive]);
 
+        // Cập nhật attrs JSON (Entity đọc active từ attrs, không phải table column)
+        $this->makeInstance()
+            ->filterID($id)
+            ->filterActive(null)
+            ->updateJson('attrs', ['active' => $newActive]);
+
         return result(true, ['active' => $newActive]);
     }
 

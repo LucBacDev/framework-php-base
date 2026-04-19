@@ -65,6 +65,8 @@ class DepartmentList extends PureComponent {
     toggleActive(dep) {
         this.depModel.toggleActive(dep.id).then(() => {
             this.getDepartments();
+        }).catch((xhr) => {
+            Alert.open(xhr.responseJSON ? xhr.responseJSON.message : 'Lỗi cập nhật');
         });
     }
 
