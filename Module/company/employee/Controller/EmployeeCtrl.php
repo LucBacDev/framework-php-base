@@ -67,13 +67,19 @@ class EmployeeCtrl extends \Company\MVC\Controller {
         $pageNo = $this->req->get('pageNo', 1);
         $pageSize = $this->req->get('pageSize', 20);
 
+        // active='' từ frontend nghĩa là "tất cả", không phải "inactive"
+        $activeParam = $this->req->get('active');
+        if ($activeParam === '' || $activeParam === null) {
+            $activeParam = null; // null → filterActive bỏ qua filter
+        }
+
         $mapper = $this->empMapper->makeInstance()
             ->filterFullname($this->req->get('fullname'))
             ->filterCode($this->req->get('code'))
             ->filterEmail($this->req->get('email'))
             ->filterDepFK($this->req->get('depFK'))
             ->filterPosition($this->req->get('position'))
-            ->filterActive($this->req->get('active'))
+            ->filterActive($activeParam)
             ->filterDeleted(0)
             ->filterSiteFK($siteID)
             ->setPage($pageNo, $pageSize);
