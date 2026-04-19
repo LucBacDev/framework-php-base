@@ -9,7 +9,7 @@ use Company\MVC\Trigger;
 
 class EmployeeMapper extends \Company\SQL\Mapper {
 
-    protected $dbVersion;
+    protected $dbVersion = '1.0.0';
     protected $autoloadDep;
 
     public function tableAlias() {
@@ -23,7 +23,6 @@ class EmployeeMapper extends \Company\SQL\Mapper {
     function __construct() {
         parent::__construct();
         $this->orderBy('emp.createdDate DESC');
-        $this->dbVersion = Module::getInstance('company/employee')->getMeta()->version;
     }
 
     /**

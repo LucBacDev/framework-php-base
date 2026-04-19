@@ -8,7 +8,7 @@ use Company\MVC\Trigger;
 
 class DepartmentMapper extends \Company\SQL\Mapper {
 
-    protected $dbVersion;
+    protected $dbVersion = '1.0.0';
     protected $loadAncestor;
 
     public function tableAlias() {
@@ -16,13 +16,12 @@ class DepartmentMapper extends \Company\SQL\Mapper {
     }
 
     public function tableName() {
-        return 'department';
+        return 'user_department';
     }
 
     function __construct() {
         parent::__construct();
         $this->orderBy('dep.path');
-        $this->dbVersion = Module::getInstance('company/department')->getMeta()->version;
     }
 
     /**
