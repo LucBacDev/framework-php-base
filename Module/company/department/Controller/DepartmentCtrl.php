@@ -24,16 +24,20 @@ class DepartmentCtrl extends \Company\MVC\Controller {
      * POST/PUT /:siteID/rest/phongban(/:id)
      */
     function updateDepartment($siteID, $id = null) {
-        $this->auth->setSiteID($siteID);
-        $this->auth->requireSite($siteID);
-        $this->auth->requireAdmin();
-        $this->auth->requirePrivilege('manageDepartment');
+        try {
+            $this->auth->setSiteID($siteID);
+            $this->auth->requireSite($siteID);
+            $this->auth->requireAdmin();
 
-        $data = $this->input();
-        $data['siteFK'] = $siteID;
+            $data = $this->input();
+            $data['siteFK'] = $siteID;
 
-        $result = $this->depMapper->updateDepartment($id, $data);
-        $this->resp->setBody(json_encode($result));
+            $result = $this->depMapper->updateDepartment($id, $data);
+            $this->resp->setBody(json_encode($result));
+        } catch (\Exception $e) {
+            $this->resp->setStatus(400);
+            $this->resp->setBody(json_encode(['result' => false, 'message' => $e->getMessage()]));
+        }
     }
 
     /**
@@ -77,13 +81,17 @@ class DepartmentCtrl extends \Company\MVC\Controller {
      * DELETE /:siteID/rest/phongban/:id
      */
     function deleteDepartment($siteID, $id) {
-        $this->auth->setSiteID($siteID);
-        $this->auth->requireSite($siteID);
-        $this->auth->requireAdmin();
-        $this->auth->requirePrivilege('manageDepartment');
+        try {
+            $this->auth->setSiteID($siteID);
+            $this->auth->requireSite($siteID);
+            $this->auth->requireAdmin();
 
-        $this->depMapper->deleteDepartment($siteID, $id);
-        $this->resp->setBody(json_encode(result(true)));
+            $this->depMapper->deleteDepartment($siteID, $id);
+            $this->resp->setBody(json_encode(result(true)));
+        } catch (\Exception $e) {
+            $this->resp->setStatus(400);
+            $this->resp->setBody(json_encode(['result' => false, 'message' => $e->getMessage()]));
+        }
     }
 
     /**
@@ -91,12 +99,16 @@ class DepartmentCtrl extends \Company\MVC\Controller {
      * POST/PUT /:siteID/rest/phongban/:id/active
      */
     function updateStatusActive($siteID, $id) {
-        $this->auth->setSiteID($siteID);
-        $this->auth->requireSite($siteID);
-        $this->auth->requireAdmin();
-        $this->auth->requirePrivilege('manageDepartment');
+        try {
+            $this->auth->setSiteID($siteID);
+            $this->auth->requireSite($siteID);
+            $this->auth->requireAdmin();
 
-        $result = $this->depMapper->updateStatusActive($siteID, $id);
-        $this->resp->setBody(json_encode($result));
+            $result = $this->depMapper->updateStatusActive($siteID, $id);
+            $this->resp->setBody(json_encode($result));
+        } catch (\Exception $e) {
+            $this->resp->setStatus(400);
+            $this->resp->setBody(json_encode(['result' => false, 'message' => $e->getMessage()]));
+        }
     }
 }
