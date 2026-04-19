@@ -52,12 +52,18 @@ class EmployeeList extends PureComponent {
     }
 
     deleteEmployee(emp) {
-        App.confirm(Lang.t('emp.confirm.delete') + ' <b>' + emp.fullname + '</b>?').then(() => {
-            this.empModel.deleteEmployee(emp.id).then(() => {
-                this.getEmployees();
-            }).catch((xhr) => {
-                Alert.open(xhr.responseJSON ? xhr.responseJSON.message : Lang.t('emp.error.delete'));
-            });
+        Confirm.open(Lang.t('emp.confirm.delete') + ' <b>' + emp.fullname + '</b>?').then((resp) => {
+            if (resp) {
+                this.empModel.deleteEmployee(emp.id).then((res) => {
+                    if (res.status) {
+                        this.getEmployees();
+                    } else {
+                        Alert.open(Lang.t('emp.error.delete'));
+                    }
+                }).catch((xhr) => {
+                    Alert.open(xhr.responseJSON ? xhr.responseJSON.message : Lang.t('emp.error.delete'));
+                });
+            }
         });
     }
 

@@ -47,12 +47,18 @@ class DepartmentList extends PureComponent {
     }
 
     deleteDepartment(dep) {
-        App.confirm(Lang.t('dep.confirm.delete') + ' <b>' + dep.name + '</b>?').then(() => {
-            this.depModel.deleteDepartment(dep.id).then(() => {
-                this.getDepartments();
-            }).catch((xhr) => {
-                Alert.open(xhr.responseJSON ? xhr.responseJSON.message : Lang.t('dep.error.delete'));
-            });
+        Confirm.open(Lang.t('dep.confirm.delete') + ' <b>' + dep.name + '</b>?').then((resp) => {
+            if (resp) {
+                this.depModel.deleteDepartment(dep.id).then((res) => {
+                    if (res.status) {
+                        this.getDepartments();
+                    } else {
+                        Alert.open(Lang.t('dep.error.delete'));
+                    }
+                }).catch((xhr) => {
+                    Alert.open(xhr.responseJSON ? xhr.responseJSON.message : Lang.t('dep.error.delete'));
+                });
+            }
         });
     }
 
