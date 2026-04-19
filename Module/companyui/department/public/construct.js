@@ -2,6 +2,13 @@ let modules = App.Component.getEventState('Module') || [];
 modules.push("companyui/department");
 App.Component.trigger('Module', modules);
 
+// Clear old lang cache để load key mới
+(function() {
+    var _lang = localStorage.getItem("lang") || 'vi';
+    var _cacheKey = App.siteUrl + '/modules/companyui/department/langs/' + _lang;
+    localStorage.removeItem(_cacheKey);
+})();
+
 Lang.load('companyui', 'department').then(() => {
     let navs = App.Component.getEventState('PageNavigator') || [];
 
