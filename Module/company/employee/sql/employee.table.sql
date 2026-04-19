@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS `employee` (
+    `id` VARCHAR(50) NOT NULL,
+    `fullname` VARCHAR(255) NOT NULL DEFAULT '',
+    `code` VARCHAR(100) NOT NULL DEFAULT '',
+    `email` VARCHAR(255) DEFAULT '',
+    `phone` VARCHAR(50) DEFAULT '',
+    `position` VARCHAR(255) DEFAULT '',
+    `depFK` VARCHAR(50) DEFAULT '0',
+    `siteFK` VARCHAR(50) NOT NULL DEFAULT '',
+    `active` TINYINT(1) NOT NULL DEFAULT 1,
+    `noDelete` TINYINT(1) NOT NULL DEFAULT 0,
+    `deleted` TINYINT(1) NOT NULL DEFAULT 0,
+    `createdDate` VARCHAR(30) DEFAULT '',
+    `dbVersion` VARCHAR(20) DEFAULT '1.0.0',
+    `attrs` TEXT,
+    PRIMARY KEY (`id`),
+    KEY `idx_employee_site` (`siteFK`),
+    KEY `idx_employee_dep` (`depFK`),
+    KEY `idx_employee_code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

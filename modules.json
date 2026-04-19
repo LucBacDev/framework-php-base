@@ -23,6 +23,8 @@
         "company/cassandra": "*",
         "company/vrzip": "*",
         "company/vrtar": "*",
+        "company/department": "*",
+        "company/employee": "*",
         "companyui/defaulttheme": "*",
         "companyui/user": "*",
         "companyui/module": "*",
