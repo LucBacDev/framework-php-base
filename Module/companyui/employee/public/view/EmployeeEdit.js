@@ -87,7 +87,7 @@ class EmployeeEdit extends PureComponent {
             }).then((deps) => {
                 this.state.form.department = deps[0];
                 this.state.form.depFK = deps[0].id;
-                this.setState({});
+                this.setPureState({form: this.state.form});
             });
         }
     }

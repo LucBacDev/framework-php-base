@@ -92,7 +92,7 @@ class DepartmentEdit extends PureComponent {
             }).then((deps) => {
                 this.state.form.parentDep = deps[0];
                 this.state.form.parentID = deps[0].id;
-                this.setState({});
+                this.setPureState({form: this.state.form});
             });
         }
     }
