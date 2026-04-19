@@ -47,16 +47,16 @@ class DepartmentList extends PureComponent {
     }
 
     deleteDepartment(dep) {
-        Confirm.open(Lang.t('dep.confirm.delete') + ' ' + dep.name + '?').then((resp) => {
+        Confirm.open('Xác nhận xóa phòng ban ' + dep.name + '?').then((resp) => {
             if (resp) {
                 this.depModel.deleteDepartment(dep.id).then((res) => {
                     if (res.status) {
                         this.getDepartments();
                     } else {
-                        Alert.open(Lang.t('dep.error.delete'));
+                        Alert.open(res.message || 'Lỗi xóa phòng ban');
                     }
                 }).catch((xhr) => {
-                    Alert.open(xhr.responseJSON ? xhr.responseJSON.message : Lang.t('dep.error.delete'));
+                    Alert.open(xhr.responseJSON ? xhr.responseJSON.message : 'Lỗi xóa phòng ban');
                 });
             }
         });
@@ -185,12 +185,10 @@ class DepartmentList extends PureComponent {
                                                         onClick={() => { this.toggleActive(dep); }}>
                                                         {dep.active == 1 ? 'Ngừng hoạt động' : 'Kích hoạt'}
                                                     </button>
-                                                    {dep.active != 1 && !dep.noDelete &&
-                                                        <button className="dropdown-item text-danger" type="button"
-                                                            onClick={() => { this.deleteDepartment(dep); }}>
-                                                            {Lang.t('dep.btnDelete')}
-                                                        </button>
-                                                    }
+                                                    <button className="dropdown-item text-danger" type="button"
+                                                        onClick={() => { this.deleteDepartment(dep); }}>
+                                                        Xóa
+                                                    </button>
                                                 </div>
                                             </div>
                                         </td>
