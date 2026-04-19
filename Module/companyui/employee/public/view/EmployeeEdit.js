@@ -121,7 +121,7 @@ class EmployeeEdit extends PureComponent {
                                     required
                                     ref={(input) => { this.txtFullname = input; }}
                                     value={this.state.form.fullname}
-                                    onChange={(ev) => { this.state.form.fullname = ev.target.value; this.setState({}); }}
+                                    onChange={(ev) => { this.state.form.fullname = ev.target.value; this.setPureState({form: this.state.form}); }}
                                 />
                                 <div className="invalid-tooltip">
                                     {Lang.t('emp.validate.fullname')}
@@ -134,7 +134,7 @@ class EmployeeEdit extends PureComponent {
                             <div className="col-sm-8">
                                 <input type="text" className="form-control"
                                     value={this.state.form.code}
-                                    onChange={(ev) => { this.state.form.code = ev.target.value; this.setState({}); }}
+                                    onChange={(ev) => { this.state.form.code = ev.target.value; this.setPureState({form: this.state.form}); }}
                                 />
                             </div>
                         </div>
@@ -144,7 +144,7 @@ class EmployeeEdit extends PureComponent {
                             <div className="col-sm-8">
                                 <input type="email" className="form-control"
                                     value={this.state.form.email}
-                                    onChange={(ev) => { this.state.form.email = ev.target.value; this.setState({}); }}
+                                    onChange={(ev) => { this.state.form.email = ev.target.value; this.setPureState({form: this.state.form}); }}
                                 />
                             </div>
                         </div>
@@ -154,7 +154,7 @@ class EmployeeEdit extends PureComponent {
                             <div className="col-sm-8">
                                 <input type="text" className="form-control"
                                     value={this.state.form.phone}
-                                    onChange={(ev) => { this.state.form.phone = ev.target.value; this.setState({}); }}
+                                    onChange={(ev) => { this.state.form.phone = ev.target.value; this.setPureState({form: this.state.form}); }}
                                 />
                             </div>
                         </div>
@@ -164,7 +164,7 @@ class EmployeeEdit extends PureComponent {
                             <div className="col-sm-8">
                                 <input type="text" className="form-control"
                                     value={this.state.form.position}
-                                    onChange={(ev) => { this.state.form.position = ev.target.value; this.setState({}); }}
+                                    onChange={(ev) => { this.state.form.position = ev.target.value; this.setPureState({form: this.state.form}); }}
                                 />
                             </div>
                         </div>

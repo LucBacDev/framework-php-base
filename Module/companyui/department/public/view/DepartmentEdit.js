@@ -138,7 +138,7 @@ class DepartmentEdit extends PureComponent {
                                     required
                                     ref={(input) => { this.txtDepName = input; }}
                                     value={this.state.form.name}
-                                    onChange={(ev) => { this.state.form.name = ev.target.value; this.setState({}); }}
+                                    onChange={(ev) => { this.state.form.name = ev.target.value; this.setPureState({form: this.state.form}); }}
                                 />
                                 <div className="invalid-tooltip">
                                     {Lang.t('dep.validate.name')}
@@ -152,7 +152,7 @@ class DepartmentEdit extends PureComponent {
                                 <input type="text" className="form-control"
                                     required
                                     value={this.state.form.code}
-                                    onChange={(ev) => { this.state.form.code = ev.target.value; this.setState({}); }}
+                                    onChange={(ev) => { this.state.form.code = ev.target.value; this.setPureState({form: this.state.form}); }}
                                 />
                                 <div className="invalid-tooltip">
                                     {Lang.t('dep.validate.code')}
