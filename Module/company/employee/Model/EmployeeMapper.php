@@ -64,11 +64,12 @@ class EmployeeMapper extends \Company\SQL\Mapper {
                 ->existsOrFail(new E\BadRequestException("Phòng ban không tồn tại: " . $updateData['depFK']));
         }
 
-        // validate code: nếu có thì phải unique
+        // validate code: nếu có thì phải unique (trong cùng site, không tính bản ghi đã xóa)
         if (!empty($updateData['code'])) {
             $existing = $this->makeInstance()
                 ->filterCode($updateData['code'])
                 ->filterSiteFK($input['siteFK'])
+                ->filterDeleted(0)
                 ->getEntity();
             if ($existing->id && $existing->id != $id) {
                 throw new E\BadRequestException("Mã nhân sự đã tồn tại: " . $updateData['code']);
