@@ -167,7 +167,7 @@ class EmployeeList extends PureComponent {
                                                     </button>
                                                     <button className="dropdown-item" type="button"
                                                         onClick={() => { this.toggleActive(emp); }}>
-                                                        {emp.active == 1 ? Lang.t('emp.btnDeactivate') : Lang.t('emp.btnActivate')}
+                                                        {emp.active == 1 ? 'Ngừng hoạt động' : 'Kích hoạt'}
                                                     </button>
                                                     {emp.active != 1 && !emp.noDelete &&
                                                         <button className="dropdown-item text-danger" type="button"

@@ -181,7 +181,7 @@ class DepartmentList extends PureComponent {
                                                     </button>
                                                     <button className="dropdown-item" type="button"
                                                         onClick={() => { this.toggleActive(dep); }}>
-                                                        {dep.active == 1 ? Lang.t('dep.btnDeactivate') : Lang.t('dep.btnActivate')}
+                                                        {dep.active == 1 ? 'Ngừng hoạt động' : 'Kích hoạt'}
                                                     </button>
                                                     {dep.active != 1 && !dep.noDelete &&
                                                         <button className="dropdown-item text-danger" type="button"
