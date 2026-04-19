@@ -1,0 +1,3 @@
+<?php
+
+namespace CompanyUI\Employee;
