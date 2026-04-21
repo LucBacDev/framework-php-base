@@ -127,8 +127,14 @@ class UserEdit extends PureComponent {
 
             this.modal.hideModal();
         }).catch((xhr) => {
-            if (this.editFail)
-                this.editFail(xhr);
+            console.log(xhr);
+            var msg = Lang.t('update.error');
+            try {
+                var body = xhr && xhr.responseJSON ? xhr.responseJSON : (xhr && xhr.responseText ? JSON.parse(xhr.responseText) : null);
+                if (body && body.message)
+                    msg = body.message;
+            } catch (e) {}
+            Alert.open(msg);
         });
     }
 
