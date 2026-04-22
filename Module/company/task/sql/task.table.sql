@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS `task` (
+    `id` VARCHAR(50) NOT NULL,
+    `siteFK` VARCHAR(50) NOT NULL DEFAULT '',
+    `title` VARCHAR(200) NOT NULL DEFAULT '',
+    `description` TEXT,
+    `priority` VARCHAR(20) NOT NULL DEFAULT 'Vừa',
+    `startTime` VARCHAR(30) DEFAULT '',
+    `dueTime` VARCHAR(30) DEFAULT '',
+    `status` VARCHAR(30) NOT NULL DEFAULT 'Mới',
+    `createdBy` VARCHAR(50) DEFAULT '',
+    `createdDate` VARCHAR(30) DEFAULT '',
+    `updatedDate` VARCHAR(30) DEFAULT '',
+    `deleted` TINYINT(1) NOT NULL DEFAULT 0,
+    `dbVersion` VARCHAR(20) DEFAULT '1.0.0',
+    `attrs` TEXT,
+    PRIMARY KEY (`id`),
+    KEY `idx_task_site` (`siteFK`),
+    KEY `idx_task_status` (`status`),
+    KEY `idx_task_due` (`dueTime`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -1,0 +1,4 @@
+<?php
+
+namespace Company\Task;
+

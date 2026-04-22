@@ -34,5 +34,10 @@
     "emp.validate.fullname": "Cần nhập họ và tên",
     "emp.confirm.delete": "Xác nhận xóa nhân sự",
     "emp.error.update": "Lỗi cập nhật",
-    "emp.error.delete": "Lỗi xóa nhân sự"
+    "emp.error.delete": "Lỗi xóa nhân sự",
+    "emp.edit.basicInfo": "Thông tin chung",
+    "userEdit.tabRole": "Phân quyền",
+    "userEdit.tabRole.default": "Mặc định",
+    "userEdit.tabRole.setDefault": "Đặt làm mặc định",
+    "userEdit.tabPriv": "Quản lý quyền"
 }

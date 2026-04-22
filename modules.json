@@ -36,6 +36,8 @@
         "companyui/license": "*",
         "companyui/service": "*",
         "companyui/department": "*",
-        "companyui/employee": "*"
+        "companyui/employee": "*",
+        "company/task": "*",
+        "companyui/task": "*"
     }
 }

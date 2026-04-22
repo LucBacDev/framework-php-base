@@ -1,580 +1,617 @@
 ---
 stepsCompleted: ["step-01-init", "step-02-context", "step-03-starter", "step-04-decisions", "step-05-patterns", "step-06-structure", "step-07-validation", "step-08-complete"]
-status: 'complete'
-completedAt: '2026-03-09'
-lastStep: 8
 inputDocuments:
-  - "_bmad-output/planning-artifacts/prd.md"
-  - "docs/index.md"
-  - "docs/project-overview.md"
-  - "docs/architecture.md"
-  - "docs/source-tree-analysis.md"
-  - "docs/data-models.md"
-  - "docs/api-contracts.md"
-  - "docs/development-guide.md"
+  - "_bmad-output/planning-artifacts/prd-task-management.md"
+  - "docs/BRD Quản lý công việc doanh nghiệp.md"
+  - "_bmad-output/planning-artifacts/ux-design-specification.md"
+  - "_bmad-output/project-context.md"
 workflowType: 'architecture'
 project_name: 'pacs2'
 user_name: 'USER'
-date: '2026-03-09'
+date: '2026-04-22'
+lastStep: 8
+status: 'complete'
+completedAt: '2026-04-22'
 ---
 
 # Architecture Decision Document
 
-_Tài liệu này được xây dựng qua từng bước khám phá cộng tác. Các phần được bổ sung khi chúng ta cùng nhau đưa ra các quyết định kiến trúc._
+_This document builds collaboratively through step-by-step discovery. Sections are appended as we work through each architectural decision together._
 
 ## Project Context Analysis
 
 ### Requirements Overview
 
 **Functional Requirements:**
-- DICOM Services: WADO-RS, QIDO-RS, STOW-RS, MWL, DIMSE C-STORE/C-FIND/C-MOVE
-- User & Access Management: Multi-role RBAC, JWT + API Key authentication
-- Study Management: Search, metadata, thumbnail, annotation
-- Storage Lifecycle: 3-tier (ONLINE/NEARLINE/OFFLINE) với auto-migration qua Kafka
-- Integration: RIS (HL7/FHIR), HIS, external DICOM AE, viewer integration
-- Audit & Compliance: Đầy đủ audit trail, data retention policy
-- Multi-site: Per-site database isolation, zone management
-- Admin UI (PacsUI): Web portal quản lý hệ thống
+- Hệ thống tập trung vào phân hệ Task Management trong E-Office với luồng nghiệp vụ rõ: tạo task, giao việc cá nhân/phòng ban, theo dõi tiến độ, gửi duyệt, phê duyệt/làm lại.
+- Có 9 nhóm FR trọng tâm (`FR-05` đến `FR-13`) bao phủ vòng đời công việc từ khởi tạo đến báo cáo và truy vết.
+- Tác nhân nghiệp vụ và phạm vi quyền đã rõ: `Admin`, `Manager`, `Staff`, trong đó Manager/Staff là luồng thao tác chính.
+- Có yêu cầu quan trọng về audit trail, kiểm soát thao tác xóa, và đồng bộ dashboard theo dữ liệu thực tế.
 
 **Non-Functional Requirements:**
-- Performance: DICOM store/retrieve latency thấp, search nhanh qua Elasticsearch
-- Security: HIPAA compliance, encrypted storage, network isolation
-- Scalability: Horizontal scaling, multi-tenant, multi-zone
-- Reliability: Không mất dữ liệu, storage redundancy
-- Availability: Uptime cao cho clinical environment
+- **Security:** RBAC theo vai trò + phạm vi phòng ban, 100% API thao tác task phải kiểm tra quyền.
+- **Performance:** Tìm kiếm/truy vấn task đạt P95 <= 2 giây.
+- **Availability/Reliability:** 24/7, mục tiêu `RPO <= 5 phút`, `RTO <= 30 phút`, retry thông báo tối đa 3 lần.
+- **Web constraints:** ưu tiên Chrome/Edge, responsive, mục tiêu accessibility tối thiểu WCAG 2.1 mức A cho màn hình chính.
 
 **Scale & Complexity:**
-- Complexity level: Enterprise / High
-- Primary domain: Healthcare API Backend + Admin Web App
-- Estimated architectural components: 15+ modules
+- Primary domain: Web application nội bộ doanh nghiệp (enterprise operations).
+- Complexity level: Medium (nghiệp vụ rõ nhưng có nhiều ràng buộc workflow + phân quyền + truy vết).
+- Estimated architectural components: khoảng 8-12 thành phần chính (Task service, Workflow engine/rules, Assignment module, Notification, Dashboard query, Reporting, Audit logging, Auth/RBAC integration, File attachment).
 
 ### Technical Constraints & Dependencies
 
-- Brownfield: PHP 8.0 / Slim 2.0 framework (không thể thay đổi runtime)
-- DICOM standard compliance bắt buộc
-- MySQL per-tenant database model đã được thiết lập
-- Elasticsearch cho full-text/metadata search
-- Kafka cho async processing pipeline
-- AWS S3 / Ceph cho object storage
+- Bối cảnh là **brownfield** trên nền hệ thống hiện có (`pacs2`) với stack PHP/Slim/module-based.
+- Cần tái sử dụng pattern hiện hữu từ project context:
+  - `makeInstance()` thay vì khởi tạo trực tiếp.
+  - Kiểm tra auth/site/privilege nhất quán ở controller.
+  - Chuẩn response/error handling thống nhất.
+- Cần tương thích cấu trúc module và convention hiện tại để giảm xung đột khi nhiều AI agents cùng triển khai.
+- Nhu cầu thông báo quá hạn/sắp quá hạn tạo phụ thuộc vào cơ chế scheduler/queue đang có.
 
 ### Cross-Cutting Concerns Identified
 
-- Multi-tenancy: Mọi request phải route đến đúng tenant DB
-- Authentication/Authorization: JWT + API Key, RBAC checks
-- Audit Logging: Mọi clinical action phải được ghi log
-- Storage Routing: Logic chọn tầng lưu trữ phù hợp
-- Rate Limiting: Bảo vệ API khỏi abuse
-- Error Handling: Clinical-grade error handling không mất data
+- **Authorization boundary:** kiểm soát quyền theo vai trò + cây phòng ban ở mọi endpoint task.
+- **Workflow integrity:** bắt buộc state machine và chặn chuyển trạng thái bất hợp lệ.
+- **Auditability:** ghi vết đầy đủ before/after cho thay đổi quan trọng.
+- **Data consistency:** dashboard/report phải khớp dữ liệu giao dịch task.
+- **Observability & reliability:** theo dõi retry thông báo, lỗi nghiệp vụ, và độ trễ truy vấn.
 
-## Technical Foundation
+## Starter Template Evaluation
 
-### Project Type: Brownfield
+### Primary Technology Domain
 
-Dự án đang hoạt động với tech stack đã được thiết lập. Không áp dụng starter template mới.
+Brownfield internal web app module extension (PHP backend + existing admin web UI), based on current pacs2 architecture.
 
-### Existing Technical Foundation
+### Starter Options Considered
 
-**Language & Runtime:** PHP 8.0+
-**Framework:** Slim 2.0 (micro-framework, lightweight routing)
-**Architecture Pattern:** SOA + Module-based design (company/mvc)
+1. New framework starter (không phù hợp):
+- Gây lệch stack hiện tại và tăng chi phí tích hợp.
+- Rủi ro phá vỡ convention/module lifecycle của hệ thống đang chạy.
 
-**Data Layer:**
-- MySQL 5.7+ — per-tenant DB isolation
-- Elasticsearch 7.x — DICOM metadata full-text search
-- Redis 7.4+ — session cache, distributed locks, storage routing state
+2. Brownfield extension on existing stack (phù hợp):
+- Tận dụng auth, RBAC, router, response/error conventions đã ổn định.
+- Giảm rủi ro triển khai và đảm bảo tương thích với codebase hiện hữu.
 
-**Infrastructure:**
-- Kafka — async event processing (storage migration pipeline)
-- AWS S3 / Ceph — object storage cho DICOM files
-- Monolog + Fluentd — centralized logging
+### Selected Starter: No new starter (Brownfield Extension)
 
-**Module Organization:**
-- `company/` — Core reusable framework (MVC, Auth, SQL, Cache)
-- `pacs/` — DICOM service implementations
-- `pacsui/` — Admin web portal
-- `ris/` — RIS/HIS integration adapters
-- `companyui/` — Shared UI components
+**Rationale for Selection:**
+- Hệ thống đã vận hành production với convention rõ ràng.
+- PRD yêu cầu mở rộng nghiệp vụ Task Management, không yêu cầu re-platform.
+- Đảm bảo AI agents triển khai nhất quán theo cùng chuẩn module hiện có.
 
-**Architectural Decisions Pre-established by Existing System:**
-- Module isolation via namespace conventions
-- Dependency injection through custom container
-- Per-tenant database routing at middleware level
-- Kafka consumers for background storage jobs
-- Redis for distributed state (rate limiting, locks, storage counters)
+**Initialization Command:**
+N/A - Không tạo project mới. Triển khai dưới dạng module/feature mới trong cấu trúc hiện tại.
+
+**Architectural Decisions Provided by Existing Foundation:**
+
+**Language & Runtime:**
+- PHP (theo stack hiện hữu của dự án).
+
+**Framework/Platform:**
+- Slim-based routing và module lifecycle hiện hành.
+
+**Data Layer Direction:**
+- Kế thừa data access pattern hiện có (mapper + conventions hiện tại).
+- Mở rộng schema cho task/audit/reporting theo module SQL pattern của dự án.
+
+**Code Organization:**
+- Tuân thủ module-based structure hiện tại (`Controller/`, `Model/`, `sql/`, `router.php`, `construct.php`).
+
+**Development Experience:**
+- Không thay đổi workflow cốt lõi; tập trung bổ sung chuẩn nghiệp vụ Task Management trên nền stack sẵn có.
+
+**Note:** Story implementation đầu tiên nên là bootstrap module Task Management theo đúng convention hiện tại (route, controller, mapper, schema, privilege seed).
 
 ## Core Architectural Decisions
 
+### Decision Priority Analysis
+
+**Critical Decisions (Block Implementation):**
+- Thiết kế schema và quan hệ dữ liệu task/assignment/progress/audit.
+- State machine và enforcement rule cho luồng trạng thái task.
+- Mô hình phân quyền theo role + phạm vi phòng ban.
+- API contract cho task lifecycle, dashboard, report.
+- Cơ chế thông báo deadline + retry policy.
+
+**Important Decisions (Shape Architecture):**
+- Chiến lược query cho dashboard/reporting (read model, index, cache).
+- Quy ước soft delete/lock task và bảo toàn lịch sử nghiệp vụ.
+- Tổ chức module và boundary giữa task core, notification, reporting.
+- Logging/monitoring cho audit + operational metrics.
+
+**Deferred Decisions (Post-MVP):**
+- Sub-task hierarchy.
+- SLA theo loại task/phòng ban.
+- Tích hợp thông báo đa kênh ngoài hệ thống (email/Zalo/Teams).
+
 ### Data Architecture
 
-**Tenant Routing Strategy:** URL path parameter `/:siteID`
-- siteID truyền qua URL path, Auth validate và route DB per-tenant
-- Pattern: `(/:siteID)/rest/:aet(/rs)/studies/:studyIUID`
-
-**Database Migration Strategy:** Per-module SQL files + install.php
-- Mỗi module tự quản lý schema trong `sql/*.table.sql`
-- Không có automated migration framework
+- **Database:** MySQL hiện hữu, mở rộng theo module SQL convention.
+- **Core Entities đề xuất:**
+  - `task`
+  - `task_assignee`
+  - `task_progress_log`
+  - `task_status_log`
+  - `task_attachment`
+  - `task_audit_log`
+- **Data Rules:**
+  - `task.status` tuân thủ state machine.
+  - `task_progress_log.progress_percent` trong [0..100].
+  - Task giao phòng ban snapshot danh sách thành viên tại thời điểm giao.
+- **Caching Strategy:**
+  - Redis cache cho dashboard counters/query aggregate ngắn hạn.
+  - Invalidate cache khi có thay đổi trạng thái/tiến độ.
+- **Migration Approach:**
+  - File SQL theo module (`sql/module_entity.table.sql`) + install/upgrade scripts.
 
 ### Authentication & Security
 
-**RBAC Implementation:** Controller-level explicit permission checks
-- Pattern: `Auth::getInstance()->setSiteID($siteID)->requirePrivilege('action')`
-- Mỗi action tự check quyền trong controller
+- **Authentication:** kế thừa login/session/JWT hiện tại.
+- **Authorization:**
+  - RBAC theo `Admin/Manager/Staff`.
+  - Enforce thêm boundary theo phòng ban quản lý.
+- **Security Middleware:**
+  - Mọi endpoint task bắt buộc `requireLogin()` + site/privilege checks.
+- **Data Protection:**
+  - Không cho Staff xóa task đã giao.
+  - Xóa logic (nếu có) bắt buộc audit before/after.
+- **Audit:**
+  - Ghi log tạo/sửa/chuyển trạng thái/duyệt/làm lại/đổi deadline/đổi người nhận.
 
-**Authentication Methods:** JWT (Bearer token) + Session cookie
-- JWT: `Auth::verifyBearerToken()` via `HTTP_AUTHORIZATION` header
-- Session: PHP session với Redis storage
+### API & Communication Patterns
 
-**Audit Logging:** Async via Fluentd → Elasticsearch
-- `AuditLogHandler` extends Monolog, writes qua FluentLogger TCP
-- requestID tracking qua `$_SERVER["UNIQUE_ID"]`
+- **API Style:** REST endpoints trong module task.
+- **Response Standard:** dùng chuẩn `result()` nhất quán toàn hệ thống.
+- **Error Handling:** dùng `Company\Exception\*` map sang mã HTTP phù hợp.
+- **Key Endpoint Groups:**
+  - Task CRUD + assignment
+  - Workflow transition (`start`, `submit`, `approve`, `rework`)
+  - Progress updates
+  - Dashboard queries
+  - Department reports
+  - Audit trail queries
+- **Notification Communication:**
+  - Job-based async notifications cho cảnh báo sắp quá hạn/quá hạn.
+  - Retry: 1m, 5m, 15m (tối đa 3 lần).
 
-### Storage Lifecycle Architecture
+### Frontend Architecture
 
-**Tier Selection:** Policy-driven via ServiceMapper config
-- Admin cấu hình: `limitTime` (age), `startTime/endTime` (time window)
-- Hỗ trợ DICOM compression khi migrate (JpegLSLossless, etc.)
-
-**Migration Execution Pattern:** Long-running CLI process + Kafka PROCESS queue
-- `moveNearline.php` persistent process với time-window self-throttling
-- Publish `MOVE_NEARLINE` → Kafka `PROCESS` topic
-- `ConsumerMoveNearlineStorage` processes job
-- Redis `MOVE_NEARLINE_COUNTER` tracks progress per processID
-
-### API & Communication
-
-**DICOM API Pattern:** No versioning — DICOMweb standard paths
-- URL: `(/:siteID)/rest/:aet(/rs)/studies/:studyIUID`
-- siteID là optional prefix identifying tenant context
-
-**RIS/HIS Integration:** Synchronous HTTP REST
-- Per-module controller pattern với Auth checks
-- Không dùng message queue cho RIS data flow
+- **UI Foundation:** giữ current admin UI pattern (brownfield).
+- **Main Screens:**
+  - Task List / My Tasks
+  - Task Detail + Timeline/Audit
+  - Manager Approval Queue
+  - Dashboard cá nhân
+  - Báo cáo phòng ban
+- **State Strategy:**
+  - Server-driven lists + filter/pagination.
+  - Polling hoặc refresh event cho cập nhật tiến độ gần real-time.
+- **UX Constraints:**
+  - Chrome/Edge ưu tiên; responsive cho thiết bị di động.
+  - Keyboard flow cho thao tác cốt lõi theo mục tiêu WCAG A.
 
 ### Infrastructure & Deployment
 
-**Process Architecture:** PHP-FPM cho HTTP API + long-running CLI consumers
-- PHP-FPM: stateless HTTP requests (horizontally scalable)
-- CLI processes: persistent consumers (storage migration, Kafka consumers)
-- Sessions/state trong Redis (enables horizontal scaling)
+- **Runtime:** theo hạ tầng hiện tại (PHP app + existing services).
+- **Background Processing:**
+  - Dùng cơ chế queue/job hiện có cho notifications và deadline scan.
+- **Observability:**
+  - Metrics: số task quá hạn, approval pending, notification success rate.
+  - Log tập trung cho API errors + workflow violations + retry failures.
+- **Resilience Targets:**
+  - Hỗ trợ mục tiêu RPO <= 5 phút, RTO <= 30 phút theo NFR.
 
-**Observability:** Fluentd → ELK + Redis counters
-- Structured logging via Monolog → Fluentd → Elasticsearch
-- Storage operation counters trong Redis
+### Decision Impact Analysis
+
+**Implementation Sequence:**
+1. Schema + migration + privilege seed.
+2. Workflow engine + transition guard.
+3. Core task APIs + assignment.
+4. Progress + approval APIs.
+5. Notification job + retry.
+6. Dashboard/report queries + cache.
+7. UI screens + filters.
+8. Audit trail views + validation hardening.
+
+**Cross-Component Dependencies:**
+- Workflow engine phụ thuộc RBAC checks và schema logs.
+- Dashboard/report phụ thuộc dữ liệu chuẩn từ task/progress/status logs.
+- Notification retry phụ thuộc queue và trạng thái deadline chính xác.
 
 ## Implementation Patterns & Consistency Rules
+
+### Pattern Categories Defined
+
+**Critical Conflict Points Identified:**
+10 nhóm xung đột tiềm ẩn: naming DB/API/code, cấu trúc module, format response/error, workflow transition guard, logging/audit payload, dashboard query conventions, notification retry behavior, quyền truy cập theo phòng ban, soft delete semantics, caching invalidation.
 
 ### Naming Patterns
 
 **Database Naming Conventions:**
-- Table: `module_entity` (snake_case, prefix bằng tên module) — ví dụ: `user_department`, `pacs_study`
-- Columns: camelCase — ví dụ: `parentID`, `createdDate`, `siteFK`, `dbVersion`
-- Foreign keys: `entityFK` — ví dụ: `siteFK`, `depFK`, `privGroupID`
-- Primary key: `id` (VARCHAR 50, UUID)
-- Indexes: `idx_columnName` — ví dụ: `idx_createdDate`, `idx_parentID`
-- SQL files: `module_entity.table.sql`
+- Table: `task_*` theo snake_case, ví dụ: `task`, `task_assignee`, `task_status_log`.
+- PK: `id` (UUID/VARCHAR theo chuẩn hệ thống hiện có).
+- FK: `{entity}ID` hoặc `{entity}FK` theo convention hiện hữu của repo (chọn 1 và áp dụng nhất quán trong module task).
+- Timestamp fields: `createdDate`, `updatedDate`, `deletedDate` (nếu dùng soft delete).
 
-**API URL Patterns:**
-- Tenant-scoped: `/:siteID/rest/:resource(/:id)`
-- DICOMweb: `(/:siteID)/rest/:aet(/rs)/studies/:studyIUID`
-- Action endpoints: `/:siteID/rest/action/:action`
-- Không có version prefix (`/v1/`, `/api/`)
+**API Naming Conventions:**
+- Base path: `/:siteID/rest/task/*`
+- Resource plural: `/tasks`, `/tasks/{taskID}/assignees`, `/tasks/{taskID}/progress`
+- Workflow actions: `/tasks/{taskID}/actions/start|submit|approve|rework`
+- Query params: camelCase nhất quán (`status`, `priority`, `assigneeID`, `fromDate`, `toDate`)
 
-**PHP Naming Conventions:**
-- Classes: PascalCase — `StudyMapper`, `AuthCtrl`
-- Methods: camelCase — `makeInstance()`, `filterID()`, `getEntity()`
-- Constants: UPPER_SNAKE_CASE — `STATUS_NORMAL`, `CACHE_STUDY_LOCK`
-- Namespaces: `Vendor\Module\SubModule` — `Pacs\Study\Model\StudyMapper`
+**Code Naming Conventions:**
+- Controller: `TaskCtrl`, `TaskApprovalCtrl`, `TaskReportCtrl`
+- Mapper: `TaskMapper`, `TaskProgressMapper`, `TaskAuditMapper`
+- Methods: camelCase động từ rõ nghĩa (`createTask`, `submitForApproval`, `approveTask`)
+- Constants: UPPER_SNAKE_CASE (`TASK_STATUS_NEW`, `TASK_PRIORITY_HIGH`)
 
-**Module File Structure:**
-- `Controller/EntityCtrl.php`
-- `Model/EntityMapper.php`
-- `Model/EntitySqlMapper.php`
-- `Model/EntityElasticSearchMapper.php`
-- `Lib/EntityFunction.php`
-- `Exec/execScript.php`
-- `sql/module_entity.table.sql`
+### Structure Patterns
 
-### API Response Patterns
+**Project Organization:**
+- `Module/company/task/Controller/`
+- `Module/company/task/Model/`
+- `Module/company/task/Lib/`
+- `Module/company/task/sql/`
+- `Module/company/task/router.php`
+- `Module/company/task/construct.php`
+- UI side theo module hiện hữu tại `Module/companyui/task/`
 
-**Standard Response:** `result($status, $data, $code)`
-```php
-// Success
-$this->outputJSON(result(true));
-$this->outputJSON(result(true, $data));
+**File Structure Patterns:**
+- 1 endpoint group/1 controller responsibility.
+- Mapper tách rõ entity chính và log/audit entity.
+- SQL schema tách theo từng bảng, không dồn một file lớn khó review.
 
-// Error
-$this->outputJSON(result(false, "E001"));
-$this->outputJSON(result(false, "message"));
-```
-JSON output: `{"status": true/false, "data": ..., "code": null}`
+### Format Patterns
 
-Không được trả raw array hay custom structure — luôn dùng `result()`.
+**API Response Formats:**
+- Luôn dùng `result(true|false, dataOrError, code?)`.
+- Không trả raw array/object tùy biến ngoài wrapper chuẩn.
+- Danh sách luôn có metadata phân trang khi có paging.
 
-### Controller Patterns
+**Error Format:**
+- Exception chuẩn từ `Company\Exception\*`.
+- Mapping lỗi nghiệp vụ:
+  - Invalid transition -> 400
+  - Forbidden by RBAC/scope -> 403
+  - Not found -> 404
+  - Conflict workflow/data version -> 409
 
-**Auth check pattern** (bắt buộc mọi action):
-```php
-Auth::getInstance()->requireLogin();
-Auth::getInstance()->setSiteID($siteID)->requirePrivilege('privilegeName');
-```
+**Date/Time Formats:**
+- API input/output dùng ISO8601.
+- DB lưu theo timezone chuẩn hệ thống (UTC hoặc timezone chuẩn đã cấu hình), không trộn lẫn.
 
-**Input/Output:**
-```php
-$input = $this->input();    // đọc request body/params
-$this->outputJSON($data);   // trả JSON response
-```
+### Communication Patterns
 
-### Mapper/Data Access Patterns
+**Event/Job Patterns (Notifications):**
+- Job names: `task.deadline.reminder`, `task.deadline.overdue`, `task.approval.pending`.
+- Payload tối thiểu: `taskID`, `siteID`, `recipientIDs`, `triggerAt`, `retryCount`.
+- Retry policy cố định: 1m -> 5m -> 15m, max 3.
 
-**Factory pattern** (không dùng `new`):
-```php
-EntityMapper::makeInstance()
-    ->filterID($id)
-    ->getEntity();          // single entity
-    ->getEntities();        // collection
-    ->getEntityOrFail();    // throws NotFoundException nếu không tìm thấy
-```
+**State Management Patterns (UI):**
+- Filter state lưu trên URL query để share/reload được.
+- Danh sách dùng server-side filtering/sorting nhất quán.
+- Trạng thái loading/success/error hiển thị theo cùng mẫu toàn module.
 
-**Multi-adapter mappers** (DICOM entities):
-```php
-static function makeSqlMapper()  { return EntitySqlMapper::makeInstance(); }
-static function makeCqlMapper()  { return EntityCqlMapper::makeInstance(); }
-```
+### Process Patterns
 
-### Exception Patterns
+**Workflow Transition Guard:**
+- Chỉ cho phép các cạnh:
+  - `NEW -> IN_PROGRESS -> PENDING_APPROVAL -> DONE`
+  - `PENDING_APPROVAL -> REWORK -> IN_PROGRESS`
+- Mọi transition đi qua 1 service guard chung, không hardcode rải rác ở nhiều controller.
 
-Dùng exceptions từ `Company\Exception\*`:
-- `BadRequestException` — input không hợp lệ
-- `ForbiddenException` — không đủ quyền
-- `NotFoundException` — entity không tồn tại
-- `UnauthorizedException` — chưa đăng nhập
-- `DatabaseException` — lỗi DB
+**Permission Check Order:**
+1. `requireLogin()`
+2. `requireSite()/setSiteID()`
+3. `requirePrivilege()`
+4. Scope check theo phòng ban/task ownership
 
-Framework tự map → HTTP status code tương ứng.
+**Audit Logging Pattern:**
+- Mọi action quan trọng ghi `before/after`, actor, timestamp, source.
+- Staff không có quyền sửa/xóa audit.
+- Delete logic phải có `reason` và record xác nhận.
 
-### Module Bootstrap Pattern
+**Caching/Invalidation Pattern:**
+- Cache key có prefix `task:{siteID}:...`
+- Invalidate bắt buộc khi create/update/transition/approve/rework.
+- Không cache dữ liệu detail có tính nhất quán cao nếu chưa có invalidation rõ.
 
-Mỗi module có:
-- `construct.php` — bootstrap hooks (auto-loaded bởi Bootstrap)
-- `install.php` — module installation logic
-- `router.php` — route definitions
-- `composer.json` — module metadata
-- `sql/` — schema files
+### Enforcement Guidelines
 
-### Process Patterns (Background Jobs)
+**All AI Agents MUST:**
+- Tuân thủ state machine và transition guard chung.
+- Tuân thủ response wrapper `result()` và exception chuẩn.
+- Không bypass permission chain + department scope checks.
+- Ghi audit log cho mọi thao tác nằm trong FR-12/FR-13.
+- Tuân thủ naming/structure conventions của module task.
 
-**CLI consumer pattern:**
-```php
-require_once $ROOT_PATH . '/Docroot/index.php';  // bootstrap
-// long-running while(true) loop với time-window self-throttling
-// publish to Kafka PROCESS topic
-// Redis counter for progress tracking
-```
+**Pattern Enforcement:**
+- PR checklist bắt buộc: naming, permission, workflow, audit, cache invalidation.
+- Unit/integration tests tối thiểu cho: transition guard, RBAC scope, audit creation.
+- Reject PR nếu endpoint mới không có permission + audit phù hợp.
 
-**Service config pattern:**
-```php
-$service = ServiceMapper::makeInstance()->getService("SERVICE_NAME");
-$attrs = json_decode($service["attrs"], true);
-```
+### Pattern Examples
 
-### Enforcement Rules
+**Good Examples:**
+- `POST /:siteID/rest/tasks/{taskID}/actions/approve`:
+  - check login/site/privilege/scope
+  - validate current status = `PENDING_APPROVAL`
+  - update status -> `DONE`
+  - write status log + audit log
+  - invalidate dashboard/report cache
+  - return `result(true, payload)`
 
-Tất cả AI agents PHẢI:
-- Dùng `result()` helper cho mọi JSON response
-- Dùng `makeInstance()` thay vì `new` cho mapper
-- Đặt tên table theo `module_entity` (snake_case prefix)
-- Đặt tên column theo camelCase (không phải snake_case)
-- Check auth theo thứ tự: `requireLogin()` → `setSiteID()` → `requirePrivilege()`
-- Throw exceptions từ `Company\Exception\*` (không throw raw `\Exception`)
-- Đặt SQL files theo `module_entity.table.sql`
-- Không tạo route với version prefix
+**Anti-Patterns:**
+- Cập nhật trực tiếp `task.status` ở nhiều nơi không qua guard.
+- Endpoint task không check scope phòng ban.
+- Trả response custom làm lệch format.
+- Không ghi audit cho approve/rework/delete logic.
 
 ## Project Structure & Boundaries
 
 ### Complete Project Directory Structure
 
-```
+```text
 pacs2/
-├── Docroot/                    # Web entry point
-│   ├── index.php               # Bootstrap HTTP app
-│   └── index.html
-├── Module/                     # Tất cả modules
-│   ├── company/                # Core framework (reusable)
-│   │   ├── auth/               # JWT + Session authentication
-│   │   ├── cache/              # Redis cache driver
-│   │   ├── elasticsearch/      # ES client + sync consumers
-│   │   ├── encrypt/            # Encryption utilities
-│   │   ├── exception/          # Exception types
-│   │   ├── file/               # File system abstraction
-│   │   ├── kafka/              # Kafka producer/consumer
-│   │   ├── license/            # License management
-│   │   ├── log/                # Monolog base handlers
-│   │   ├── mvc/                # Bootstrap, Router, Controller, Mapper base
-│   │   ├── queue/              # Queue abstraction (Kafka-backed)
-│   │   ├── queueSql/           # SQL-backed queue
-│   │   ├── service/            # Service manager
-│   │   ├── session/            # Session storage (Redis)
-│   │   ├── setting/            # Config/settings data
-│   │   ├── site/               # Multi-site management
-│   │   ├── sql/                # DB connection layer
-│   │   ├── systemmonitoring/   # Health check, sync status
-│   │   ├── user/               # User, role, privilege management
-│   │   └── zone/               # Multi-zone management
-│   ├── companyui/              # Core admin UI modules
-│   │   ├── home/               # Dashboard
-│   │   ├── site/               # Site management UI
-│   │   ├── user/               # User management UI
-│   │   ├── setting/            # Settings UI
-│   │   └── queue/              # Queue monitor UI
-│   ├── pacs/                   # PACS/DICOM core modules
-│   │   ├── wado/               # WADO-RS (retrieve)
-│   │   ├── stow/               # STOW-RS (store)
-│   │   ├── qidors/             # QIDO-RS (query)
-│   │   ├── dicomnet/           # DICOM network (C-STORE/C-FIND/C-MOVE)
-│   │   ├── hl7server/          # HL7 MLP server
-│   │   ├── mwl/                # Modality Worklist
-│   │   ├── study/              # Study management
-│   │   ├── series/             # Series management
-│   │   ├── instance/           # Instance management
-│   │   ├── file/               # File storage abstraction
-│   │   ├── storage/            # Storage tier management (ONLINE/NEARLINE/OFFLINE)
-│   │   ├── media/              # Non-DICOM media files
-│   │   ├── report/             # Radiology reports
-│   │   ├── image/              # Image processing
-│   │   ├── compression/        # DICOM compression
-│   │   ├── dicomtagmorphing/   # Tag modification
-│   │   ├── log/                # Audit logging (Fluentd)
-│   │   ├── accessmanagement/   # Access control (rate limiting)
-│   │   ├── ae/                 # AE Title management
-│   │   ├── ai/                 # AI integration
-│   │   ├── viewer/             # Viewer integration
-│   │   ├── publiclink/         # Public share links
-│   │   ├── integration/        # External system adapters
-│   │   ├── queryretrieve/      # DICOM Q/R helpers
-│   │   ├── consumerprocess/    # Consumer process runner
-│   │   ├── dbadaptermapper/    # Multi-DB adapter base
-│   │   ├── dicom/              # DICOM parsing/building library
-│   │   ├── setting/            # PACS settings
-│   │   ├── studylog/           # Study activity log
-│   │   └── tool/               # Utility tools
-│   ├── pacsui/                 # PACS admin UI modules
-│   │   ├── study/              # Study management UI
-│   │   ├── storage/            # Storage management UI
-│   │   ├── ae/                 # AE management UI
-│   │   ├── log/                # Audit log UI
-│   │   ├── setting/            # PACS settings UI
-│   │   ├── viewer/             # Viewer UI
-│   │   ├── report/             # Report UI
-│   │   ├── mwl/                # MWL UI
-│   │   └── zone/               # Zone management UI
-│   └── ris/                    # RIS integration modules
-│       ├── duty/               # Duty/schedule management
-│       └── setting/            # RIS settings
-├── Config/                     # Application configuration
-├── sql/                        # Global SQL migrations
-├── install/                    # Installation scripts
-├── vendor/                     # Composer dependencies
-├── tests/                      # PHPUnit tests
-├── docs/                       # Project documentation
-├── composer.json
-├── construct.php               # Global bootstrap hooks
-└── startup.sh
+├── Module/
+│   ├── company/
+│   │   └── task/
+│   │       ├── Controller/
+│   │       │   ├── TaskCtrl.php
+│   │       │   ├── TaskWorkflowCtrl.php
+│   │       │   ├── TaskDashboardCtrl.php
+│   │       │   └── TaskReportCtrl.php
+│   │       ├── Model/
+│   │       │   ├── TaskMapper.php
+│   │       │   ├── TaskAssigneeMapper.php
+│   │       │   ├── TaskProgressMapper.php
+│   │       │   ├── TaskStatusLogMapper.php
+│   │       │   ├── TaskAttachmentMapper.php
+│   │       │   └── TaskAuditLogMapper.php
+│   │       ├── Lib/
+│   │       │   ├── TaskWorkflowGuard.php
+│   │       │   ├── TaskPermissionService.php
+│   │       │   ├── TaskNotificationService.php
+│   │       │   └── TaskReportService.php
+│   │       ├── Exec/
+│   │       │   ├── deadlineReminderJob.php
+│   │       │   └── overdueScanJob.php
+│   │       ├── sql/
+│   │       │   ├── task.table.sql
+│   │       │   ├── task_assignee.table.sql
+│   │       │   ├── task_progress_log.table.sql
+│   │       │   ├── task_status_log.table.sql
+│   │       │   ├── task_attachment.table.sql
+│   │       │   └── task_audit_log.table.sql
+│   │       ├── router.php
+│   │       ├── construct.php
+│   │       ├── install.php
+│   │       └── composer.json
+│   └── companyui/
+│       └── task/
+│           ├── public/
+│           │   └── view/
+│           │       ├── TaskList.js
+│           │       ├── TaskDetail.js
+│           │       ├── TaskApproval.js
+│           │       ├── TaskDashboard.js
+│           │       └── TaskReport.js
+│           ├── lang/
+│           │   ├── vi.json
+│           │   └── en.json
+│           ├── router.php
+│           ├── construct.php
+│           └── composer.json
+└── tests/
+    ├── unit/
+    │   └── task/
+    ├── integration/
+    │   └── task/
+    └── e2e/
+        └── task/
 ```
 
 ### Architectural Boundaries
 
 **API Boundaries:**
-- HTTP API: `Docroot/index.php` → Router → Controller
-- DICOM Network: `pacs/dicomnet/Exec/DicomServer/start.php` (standalone)
-- HL7 Server: `pacs/hl7server/` (standalone TCP server)
-- Consumer processes: `pacs/consumerprocess/Exec/` (standalone CLI)
+- Task module chỉ expose endpoint qua `/:siteID/rest/tasks/*`.
+- Workflow actions tách riêng namespace `actions` để tránh lẫn CRUD với transition nghiệp vụ.
+- Dashboard/report endpoint read-only, không được chứa side effect.
 
-**Storage Tier Boundaries:**
-- ONLINE: local disk / fast S3 — `pacs/file/`, `pacs/storage/`
-- NEARLINE: cold S3 / Ceph — `pacs/storage/Exec/moveNearline.php`
-- OFFLINE: tape / archive — `pacs/storage/Exec/moveOffline.php`
+**Component Boundaries:**
+- `Controller`: validate input + auth/scope + orchestration.
+- `Lib/Service`: business rules, workflow guard, notification logic.
+- `Model`: truy cập dữ liệu, không chứa quyết định workflow.
+- `companyui/task`: chỉ rendering + interaction; business rule nằm backend.
 
-**Data Access Boundaries:**
-- MySQL per-tenant: `company/sql/` → per-site DB connection
-- Elasticsearch: `company/elasticsearch/` → `pacs/*/Model/*ElasticSearchMapper.php`
-- Redis: `company/cache/` → session, locks, counters
-- Object storage (S3/Ceph): `pacs/file/` abstraction layer
+**Service Boundaries:**
+- `TaskWorkflowGuard`: nguồn chân lý duy nhất cho state transition.
+- `TaskPermissionService`: nguồn chân lý duy nhất cho scope check theo phòng ban.
+- `TaskNotificationService`: chịu trách nhiệm enqueue + retry tracking.
+- `TaskReportService`: tổng hợp dữ liệu báo cáo theo kỳ.
+
+**Data Boundaries:**
+- `task` là aggregate root.
+- Log tables (`task_progress_log`, `task_status_log`, `task_audit_log`) là append-only (trừ kỹ thuật vận hành được kiểm soát).
+- Attachments tách bảng để tối ưu kích thước bản ghi task chính.
 
 ### Requirements to Structure Mapping
 
-| PRD Requirement | Module(s) |
-|---|---|
-| DICOM WADO-RS | `pacs/wado/` |
-| DICOM STOW-RS | `pacs/stow/` |
-| DICOM QIDO-RS | `pacs/qidors/` |
-| DICOM Net (C-STORE/C-FIND/C-MOVE) | `pacs/dicomnet/` |
-| Modality Worklist (MWL) | `pacs/mwl/` |
-| Study Management | `pacs/study/`, `pacs/series/`, `pacs/instance/` |
-| Storage Lifecycle | `pacs/storage/` |
-| User & RBAC | `company/user/`, `company/auth/` |
-| Audit Logging | `pacs/log/` |
-| RIS Integration | `pacs/ris/`, `module/ris/` |
-| HL7 Server | `pacs/hl7server/` |
-| Multi-site & Zone | `company/site/`, `company/zone/` |
-| Admin UI | `pacsui/*`, `companyui/*` |
-| AI features | `pacs/ai/` |
-| Public sharing | `pacs/publiclink/` |
-| Reports | `pacs/report/` |
+**Feature Mapping:**
+- FR-05/06 -> `TaskCtrl`, `TaskAssigneeMapper`
+- FR-07 -> `TaskCtrl` + `TaskNotificationService` + `deadlineReminderJob.php`
+- FR-08 -> `TaskWorkflowCtrl` + `TaskWorkflowGuard`
+- FR-09 -> `TaskCtrl` + `TaskProgressMapper`
+- FR-10 -> `TaskDashboardCtrl` + `TaskDashboard.js`
+- FR-11 -> `TaskReportCtrl` + `TaskReportService` + `TaskReport.js`
+- FR-12 -> `TaskAuditLogMapper` + audit writes trong service layer
+- FR-13 -> `TaskPermissionService` + guarded delete/lock flows
+
+**Cross-Cutting Concerns:**
+- RBAC/scope: `TaskPermissionService` + controller middleware chain.
+- Audit: write-through tại service layer mọi action quan trọng.
+- Performance: `TaskDashboardCtrl` và `TaskReportCtrl` dùng query tối ưu + cache.
+- Reliability: retry job + monitoring counters cho notification pipeline.
 
 ### Integration Points
 
 **Internal Communication:**
-- HTTP: Slim router → Controller → Mapper
-- Async: Controller/CLI → Kafka Producer → Consumer process → Mapper
+- Controller -> Service (`Lib`) -> Mapper.
+- Workflow transition luôn qua `TaskWorkflowGuard`.
+- Notification qua job enqueue (không gửi sync trong request chính).
 
 **External Integrations:**
-- DICOM AE: `pacs/dicomnet/` (C-STORE, C-FIND, C-MOVE, N-ACTION)
-- HL7 MLP: `pacs/hl7server/` (MWL queries from RIS)
-- Object Storage: `pacs/file/` → AWS S3 SDK / Ceph S3-compatible
-- Viewers: `pacs/viewer/` → Oviyam, Orthanc, external WADO-RS
+- Reuse auth/session/JWT hiện tại của `company/auth`.
+- Reuse queue/scheduler/caching hiện tại (Redis + cơ chế job có sẵn).
+- Reuse org structure từ module phòng ban/nhân sự để resolve assignment theo phòng.
 
-### System Component Flow Diagram
+**Data Flow:**
+1. Manager tạo task -> lưu `task` + `task_assignee` + audit.
+2. Staff cập nhật tiến độ -> lưu `task_progress_log` + có thể update summary trong `task`.
+3. Gửi duyệt/duyệt/làm lại -> chạy workflow guard -> ghi `task_status_log` + audit -> invalidate cache.
+4. Dashboard/report query đọc từ `task` + logs (có thể qua pre-aggregated cache).
 
-```mermaid
-graph TD
-    %% External Entities
-    Modality[Modalities]
-    Viewer[Web Viewers / UI]
-    RIS[RIS/HIS System]
-    
-    %% API Gateway
-    Web[Web Server / Load Balancer]
+### File Organization Patterns
 
-    %% App Layer
-    subgraph Application_Layer [Application Layer - PHP]
-        direction TB
-        Slim[Slim Framework Router]
-        
-        subgraph HTTP_Services [HTTP / DICOMweb Services]
-            WADO[pacs/wado]
-            STOW[pacs/stow]
-            QIDO[pacs/qidors]
-            AdminUI[pacsui / Admin API]
-        end
-        
-        subgraph Standalone_Servers [Standalone Servers]
-            HL7[pacs/hl7server]
-            DicomNet[pacs/dicomnet]
-        end
-        
-        subgraph Async_Workers [Background Workers]
-            Consumer[pacs/consumerprocess]
-            StorageMigrator[pacs/storage]
-        end
-        
-        FileAdapter[pacs/file - Storage Adapter]
-    end
+**Configuration Files:**
+- Config module task đặt trong `construct.php` + service config chuẩn hệ thống.
 
-    %% Data Layer
-    subgraph Data_Layer [Data & Persistence]
-        MySQL[(MySQL\nTenant DB)]
-        ES[(Elasticsearch\nMeta Index)]
-        Redis[(Redis\nCache/Session/State)]
-        Kafka[[Kafka\nEvent Bus]]
-        S3[(AWS S3 / Ceph\nObject Storage)]
-    end
+**Source Organization:**
+- Naming giữ chuẩn hiện hữu (`*Ctrl`, `*Mapper`, `makeInstance()`).
 
-    %% Connections
-    Modality -->|DICOMweb / HTTP| Web
-    Modality -->|DICOM C-STORE| DicomNet
-    Viewer -->|HTTP WADO-RS| Web
-    RIS -->|HL7 MLP| HL7
-    RIS -->|HTTP API| Web
+**Test Organization:**
+- Unit test cho workflow guard/permission service.
+- Integration test cho API transitions + audit logging.
+- E2E test cho luồng Manager/Staff chính.
 
-    Web --> Slim
-    Slim -->|Auth| HTTP_Services
+**Asset Organization:**
+- JS views riêng cho từng màn hình task.
+- i18n keys tách trong `companyui/task/lang/*`.
 
-    HTTP_Services --> FileAdapter
-    DicomNet --> FileAdapter
+### Development Workflow Integration
 
-    FileAdapter -->|Write/Read Object| S3
-    
-    STOW -->|Produce PACS_STOW| Kafka
-    DicomNet -->|Produce Event| Kafka
-    
-    Kafka -->|Consume Task| Consumer
-    Consumer -->|Update DB/Index| MySQL
-    Consumer -->|Update DB/Index| ES
-    
-    HTTP_Services -->|Query/Write| MySQL
-    HTTP_Services -->|Search / Audit| ES
-    HTTP_Services -->|Session/Lock| Redis
-    
-    StorageMigrator -.->|Query Candidates| ES
-    StorageMigrator -.->|Move Files| S3
-    StorageMigrator -.->|Counters| Redis
-    StorageMigrator -.->|Produce Event| Kafka
-```
+**Development Server Structure:**
+- Không đổi bootstrap toàn hệ thống; module task được nạp qua lifecycle hiện tại.
 
-**Data Flow — DICOM Store:**
-```
-Modality → STOW-RS/C-STORE → pacs/stow → pacs/file (write S3)
-→ Kafka PACS_STOW → consumer → pacs/instance (index ES + MySQL)
-```
+**Build Process Structure:**
+- Theo pipeline hiện hữu; thêm migration/install step cho module task.
 
-**Data Flow — Storage Migration:**
-```
-moveNearline.php → query ES (ONLINE files) → copy to NEARLINE S3
-→ Redis move_nearline_data → ConsumerMoveNearlineStorage → update DB
-```
+**Deployment Structure:**
+- Rollout theo module; có thể feature-flag nếu cần giảm rủi ro khi go-live.
 
 ## Architecture Validation Results
 
 ### Coherence Validation ✅
 
-**Decision Compatibility:** Tất cả quyết định tương thích nhau
-- PHP-FPM stateless + Redis sessions → horizontal scaling khả thi
-- JWT Bearer token → chuẩn DICOMweb authentication
-- Kafka async pipeline + MySQL sync writes → phân tách roles rõ ràng
-- siteID URL path → nhất quán qua tất cả tenant-scoped routes
+**Decision Compatibility:**
+- Brownfield extension phù hợp stack hiện tại, không tạo xung đột runtime/framework.
+- Data model, workflow guard, RBAC scope, notification retry hỗ trợ lẫn nhau.
+- Patterns naming/structure/response đồng bộ với project context.
 
-**Notable:** Routes có `(/:siteID)` optional dành cho cross-site operations;
-`/:siteID` bắt buộc dành cho tenant-scoped data access.
+**Pattern Consistency:**
+- Quy ước `Controller -> Service -> Mapper` rõ ràng, tránh lẫn business rule với data access.
+- State transition được gom về guard chung, giảm rủi ro logic phân tán.
+- Response/error/audit/caching có chuẩn thống nhất cho toàn module.
+
+**Structure Alignment:**
+- Cây thư mục module task map trực tiếp theo FR-05..FR-13.
+- Boundary giữa backend service, UI, job, và reporting đã rõ.
+- Tích hợp được với auth, org, cache, queue hiện hữu.
 
 ### Requirements Coverage Validation ✅
 
-**Functional Requirements:** Tất cả 24 FR categories có module tương ứng
-**NFRs:**
-- Performance: Redis cache + Elasticsearch + Kafka async pipeline
-- Security: RBAC controller-level + JWT + Fluentd audit trail
-- Scalability: PHP-FPM stateless + per-tenant DB + Redis distributed state
-- DICOM compliance: DICOMweb standard paths (WADO/STOW/QIDO)
-- Reliability: Kafka consumer retry + Redis counters + storage redundancy
+**Functional Requirements Coverage:**
+- FR-05..FR-13 đều đã có component/endpoint/data-layer tương ứng.
+- Luồng Manager/Staff/Admin được hỗ trợ đầy đủ theo PRD.
 
-### Gap Analysis
+**Non-Functional Requirements Coverage:**
+- Security: RBAC + scope check + audit bắt buộc.
+- Performance: hướng tối ưu query dashboard/report + cache invalidation strategy.
+- Availability/Reliability: thiết kế job retry cho notifications; phù hợp mục tiêu 24/7.
+- Accessibility/Web: giữ nguyên UI foundation hiện hữu, bổ sung guideline cho luồng chính.
 
-**Important:**
-- Test conventions chưa định nghĩa — `tests/` folder tồn tại nhưng chưa có pattern convention cho AI agents
-- `Config/` structure chưa được document chi tiết
+### Implementation Readiness Validation ✅
 
-**Minor:**
-- `pacs/swooleserver/` là legacy module, không còn sử dụng — treat as deprecated
+**Decision Completeness:**
+- Critical decisions đã chốt: schema, workflow, authorization, API, notifications.
+- Deferred scope đã tách rõ (sub-task, SLA, multi-channel notify).
+
+**Structure Completeness:**
+- Project tree cho module task đủ để bắt đầu implementation stories.
+- Integration points nội bộ/ngoại vi đã được mô tả rõ.
+
+**Pattern Completeness:**
+- Conflict points chính đã có pattern và anti-pattern đi kèm.
+- Enforcement guideline có thể đưa thẳng vào PR checklist/test checklist.
+
+### Gap Analysis Results
+
+**Critical Gaps:** None.
+
+**Important Gaps:**
+- Cần chốt dứt điểm 1 chuẩn FK naming trong module task (`entityID` vs `entityFK`) trước khi viết migration.
+- Cần quyết định mức real-time cho dashboard (polling interval hay event push) để tránh over-engineering.
+- Cần xác nhận nguồn dữ liệu phòng ban snapshot khi giao task theo department (đọc từ bảng nào và tại thời điểm nào).
+
+**Nice-to-Have Gaps:**
+- Chuẩn hóa template thông báo (nội dung/đa ngôn ngữ).
+- Bổ sung chỉ số vận hành sâu hơn: transition failure rate, approval lead time.
+
+### Validation Issues Addressed
+
+- Đã giảm rủi ro lệch chuẩn bằng cách bắt buộc transition qua guard chung.
+- Đã tránh rò quyền bằng permission chain + department scope check.
+- Đã xử lý nhất quán dữ liệu dashboard/report qua pattern cache invalidation.
 
 ### Architecture Completeness Checklist
 
-- [x] **Requirements Analysis** — Context, scale, constraints, cross-cutting concerns
-- [x] **Architectural Decisions** — Data arch, auth/security, storage lifecycle, API, infrastructure
-- [x] **Implementation Patterns** — Naming, response format, controller, mapper, exception, bootstrap, process
-- [x] **Project Structure** — Module tree đầy đủ, boundaries, integration points, FR mapping
+**✅ Requirements Analysis**
+- [x] Project context analyzed
+- [x] FR/NFR mapped
+- [x] Cross-cutting concerns identified
+
+**✅ Architectural Decisions**
+- [x] Core decisions documented
+- [x] Security/workflow/data/API covered
+- [x] Deferred scope isolated
+
+**✅ Implementation Patterns**
+- [x] Naming/structure/format patterns defined
+- [x] Process + enforcement rules defined
+- [x] Good/anti-pattern examples provided
+
+**✅ Project Structure**
+- [x] Complete module tree proposed
+- [x] Boundaries and integration points mapped
+- [x] Requirement-to-structure mapping complete
 
 ### Architecture Readiness Assessment
 
-**Overall Status: READY FOR IMPLEMENTATION**
+**Overall Status:** READY FOR IMPLEMENTATION
 
 **Confidence Level:** High
 
 **Key Strengths:**
-- Brownfield project với patterns đã được battle-tested trong production
-- Module isolation rõ ràng, dễ thêm feature mới mà không ảnh hưởng core
-- Async pipeline (Kafka) tách biệt storage migration khỏi HTTP request cycle
-- Per-tenant DB isolation đảm bảo data security và compliance
+- Bám sát PRD và phù hợp hoàn toàn bối cảnh brownfield.
+- Ràng buộc workflow + RBAC + audit rõ, giảm lỗi nghiệp vụ.
+- Cấu trúc triển khai chi tiết, có thể chuyển ngay thành stories/dev tasks.
 
 **Areas for Future Enhancement:**
-- Automated migration framework (thay thế manual SQL files)
-- Test coverage conventions cho `tests/`
-- OpenAPI/Swagger documentation cho REST endpoints
+- Sub-task model và SLA engine.
+- Event-driven realtime dashboard nếu nhu cầu tăng.
+- Multi-channel notification adapters.
+
+### Implementation Handoff
+
+**AI Agent Guidelines:**
+- Tuân thủ tuyệt đối state machine guard, permission chain, audit logging.
+- Không bypass conventions về response/error/naming.
+- Mọi endpoint task mới phải có test cho quyền + workflow + audit.
+
+**First Implementation Priority:**
+1. Bootstrap `Module/company/task` + schema SQL.
+2. Implement transition guard + permission service.
+3. Build core task lifecycle APIs.
+4. Add dashboard/report read APIs.
+5. Add notification jobs + retry tracking.

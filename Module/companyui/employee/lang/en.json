@@ -34,5 +34,10 @@
     "emp.validate.fullname": "Please enter full name",
     "emp.confirm.delete": "Confirm delete employee",
     "emp.error.update": "Update error",
-    "emp.error.delete": "Delete error"
+    "emp.error.delete": "Delete error",
+    "emp.edit.basicInfo": "Basic Info",
+    "userEdit.tabRole": "Roles",
+    "userEdit.tabRole.default": "Default",
+    "userEdit.tabRole.setDefault": "Set Default",
+    "userEdit.tabPriv": "Privileges"
 }

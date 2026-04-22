@@ -76,17 +76,46 @@ class EmployeeMapper extends \Company\SQL\Mapper {
             }
         }
 
+        $userInput = [
+            'fullname' => $updateData['fullname'],
+            'siteFK' => $updateData['siteFK'],
+            'active' => $updateData['active'],
+            'noDelete' => $updateData['noDelete'],
+            'roles' => $input['roles'] ?? [],
+            'privileges' => $input['privileges'] ?? []
+        ];
+
+        // transaction
+        $this->startTrans();
+
         if ($isInsert) {
-            $id = $updateData['id'] = uid();
+            if (empty($input['password'])) {
+                throw new E\BadRequestException("Mật khẩu không được để trống");
+            }
+            if (empty($input['email'])) {
+                throw new E\BadRequestException("Email (Tên đăng nhập) không được để trống");
+            }
+            
+            $userInput['login'] = [
+                'localdb' => [
+                    'account' => $input['email'],
+                    'password' => $input['password']
+                ]
+            ];
+            
+            // Create user account to link ID natively
+            $userResult = \Company\User\Model\UserMapper::makeInstance()->updateUser(null, $userInput);
+            $id = $updateData['id'] = $userResult['data']['id'];
+
             $updateData += [
                 'createdDate' => \DateTimeEx::create()->toIsoString(),
                 'dbVersion' => $this->dbVersion,
                 'deleted' => 0
             ];
+        } else {
+            // Cập nhật account và phân quyền vào db tài khoản
+            \Company\User\Model\UserMapper::makeInstance()->updateUser($id, $userInput);
         }
-
-        // transaction
-        $this->startTrans();
 
         $triggerParams = [
             'id' => $id,
