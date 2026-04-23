@@ -9,3 +9,5 @@ tests/DicomData
 /Deploy-Dev/.docker-data
 /Deploy-Dev/
 Config/Enviroments/development.config.php
+/vendor
+.gitignore
