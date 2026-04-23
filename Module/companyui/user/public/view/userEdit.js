@@ -111,8 +111,14 @@ class UserEdit extends PureComponent {
             return;
         }
         // nhập lại password sai khi thêm mới
-        if (!data.id && !this.txtRePassword.getValid()) {
-            return;
+        if (!data.id) {
+            var pwd = data.login && data.login.localdb ? data.login.localdb.password : '';
+            var rpwd = data.login && data.login.localdb ? data.login.localdb.repassword : '';
+            if (!rpwd || rpwd !== pwd) {
+                this.txtRePassword.setValid(false);
+                $(form).addClass('was-validated');
+                return;
+            }
         }
 
         this.userModel.updateUser(this.state.form.id, data).then((resp) => {
@@ -121,8 +127,14 @@ class UserEdit extends PureComponent {
 
             this.modal.hideModal();
         }).catch((xhr) => {
-            if (this.editFail)
-                this.editFail(xhr);
+            console.log(xhr);
+            var msg = Lang.t('update.error');
+            try {
+                var body = xhr && xhr.responseJSON ? xhr.responseJSON : (xhr && xhr.responseText ? JSON.parse(xhr.responseText) : null);
+                if (body && body.message)
+                    msg = body.message;
+            } catch (e) {}
+            Alert.open(msg);
         });
     }
 

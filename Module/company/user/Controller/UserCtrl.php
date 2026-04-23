@@ -22,17 +22,21 @@ class UserCtrl extends \Company\MVC\Controller {
     }
 
     function updateUser($siteID, $id = null) {
-        $this->auth->requireAdmin();
-        $this->auth->setSiteID($siteID);
-        $this->auth->requireSite($siteID);
-        $this->auth->requirePrivilege('manageUser');
+        try {
+            $this->auth->setSiteID($siteID);
+            $this->auth->requireSite($siteID);
+            $this->auth->requireAdmin();
 
-        $data = $this->input();
+            $data = $this->input();
 
-        $data['siteFK'] = $siteID;
-        $result = $this->userMapper->updateUser($id, $data);
+            $data['siteFK'] = $siteID;
+            $result = $this->userMapper->updateUser($id, $data);
 
-        $this->resp->setBody(json_encode($result));
+            $this->resp->setBody(json_encode($result));
+        } catch (\Exception $e) {
+            $this->resp->setStatus(400);
+            $this->resp->setBody(json_encode(['result' => false, 'message' => $e->getMessage()]));
+        }
     }
 
     function changePassword($siteID) {
@@ -104,13 +108,17 @@ class UserCtrl extends \Company\MVC\Controller {
     }
 
     function deleteUser($siteID, $id) {
-        $this->auth->requireAdmin();
-        $this->auth->setSiteID($siteID);
-        $this->auth->requireSite($siteID);
-        $this->auth->requirePrivilege('manageUser');
+        try {
+            $this->auth->setSiteID($siteID);
+            $this->auth->requireSite($siteID);
+            $this->auth->requireAdmin();
 
-        $this->userMapper->deleteUser($siteID, $id);
-        $this->resp->setBody(json_encode(result(true)));
+            $this->userMapper->deleteUser($siteID, $id);
+            $this->resp->setBody(json_encode(result(true)));
+        } catch (\Exception $e) {
+            $this->resp->setStatus(400);
+            $this->resp->setBody(json_encode(['result' => false, 'message' => $e->getMessage()]));
+        }
     }
 
 

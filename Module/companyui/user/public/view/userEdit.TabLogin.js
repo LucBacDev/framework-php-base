@@ -37,6 +37,7 @@ App.Component.on('UserEdit/construct', (that) => {
                         <label className="col-sm-5 col-form-label control-label" htmlFor="txt-re-password"> {Lang.t('userEdit.tabLogin.rePassword')} {!that.state.form.id ? <Require /> : ''}</label>
                         <div className="col-sm-7">
                             <Input type="password" className="form-control" id="txt-re-password"
+                                   required={!that.state.form.id ? true : false}
                                    ref={(elm) => { that.txtRePassword = elm; }}
                                    value={that.state.form.login.localdb.repassword}
                                    onChange={(ev) => { that.handleChangeRePassword(ev); }}
