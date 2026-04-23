@@ -5,22 +5,25 @@ class TaskModel {
     }
 
     getTasks(filter = {}) {
-        let a = $.rest({
+        return $.rest({
             url: this.apiBase,
             data: filter
         });
-         console.log('apiBase: ', this.apiBase);
-        console.log('filter: ', filter);
-        console.log('a: ', a);
-        return a;
     }
 
     createTask(data) {
         return $.rest({
             url: this.apiBase,
             method: 'POST',
-            data: JSON.stringify(data),
-            contentType: 'application/json'
+            data: data
+        });
+    }
+
+    assignIndividual(taskId, assigneeId) {
+        return $.rest({
+            url: App.url('/:siteID/rest/task/tasks/:taskID/assign/individual', { siteID: App.siteID, taskID: taskId }),
+            method: 'POST',
+            data: { assigneeID: assigneeId }
         });
     }
 
@@ -35,8 +38,7 @@ class TaskModel {
         return $.rest({
             url: this.apiBase + '/' + id + '/start',
             method: 'POST',
-            data: JSON.stringify({ note: 'Bắt đầu từ Kanban' }),
-            contentType: 'application/json'
+            data: { note: 'Bắt đầu từ Kanban' }
         });
     }
 
@@ -44,8 +46,7 @@ class TaskModel {
         return $.rest({
             url: this.apiBase + '/' + id + '/submit',
             method: 'POST',
-            data: JSON.stringify({ note: 'Gửi duyệt từ Kanban' }),
-            contentType: 'application/json'
+            data: { note: 'Gửi duyệt từ Kanban' }
         });
     }
 
@@ -53,8 +54,7 @@ class TaskModel {
         return $.rest({
             url: this.apiBase + '/' + id + '/approve',
             method: 'POST',
-            data: JSON.stringify({ note: 'Phê duyệt từ Kanban' }),
-            contentType: 'application/json'
+            data: { note: 'Phê duyệt từ Kanban' }
         });
     }
 
@@ -62,8 +62,7 @@ class TaskModel {
         return $.rest({
             url: this.apiBase + '/' + id + '/rework',
             method: 'POST',
-            data: JSON.stringify({ note: 'Yêu cầu làm lại từ Kanban' }),
-            contentType: 'application/json'
+            data: { note: 'Yêu cầu làm lại từ Kanban' }
         });
     }
 
@@ -71,8 +70,7 @@ class TaskModel {
         return $.rest({
             url: this.apiBase + '/' + id + '/progress',
             method: 'POST',
-            data: JSON.stringify({ progress: progress, note: 'Cập nhật từ Kanban' }),
-            contentType: 'application/json'
+            data: { progress: progress, note: 'Cập nhật từ Kanban' }
         });
     }
 
@@ -80,8 +78,7 @@ class TaskModel {
         return $.rest({
             url: this.apiBase + '/' + id + '/deadline',
             method: 'PATCH',
-            data: JSON.stringify({ dueTime: dueTime }),
-            contentType: 'application/json'
+            data: { dueTime: dueTime }
         });
     }
 }

@@ -16,9 +16,11 @@ class TaskUiCtrl extends \Company\MVC\Controller {
 
     function taskBoard($siteID) {
         $module = Module::getInstance('companyui/task');
+        $empModule = Module::getInstance('companyui/employee');
         
         $this->layout
             ->setSiteID($siteID)
+            ->addJs($empModule->getBabelURL('autoload.json'))
             ->addJs($module->getPublicURL() . '/tailwind-config.js')
             ->addJs('https://cdn.tailwindcss.com')
             ->addJs('https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js')

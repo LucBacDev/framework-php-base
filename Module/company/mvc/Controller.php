@@ -68,8 +68,11 @@ abstract class Controller extends \Macroable {
     function input($key = null, $default = null) {
         if($this->_input === false) {
             $input = file_get_contents('php://input');
-            if (strlen($input) && ($input[0] == '{' || $input[0] == '['))
-                $this->_input = json_decode($input, true, 20, JSON_THROW_ON_ERROR);
+            if (strlen($input) && ($input[0] == '{' || $input[0] == '[')) {
+                $this->_input = json_decode($input, true);
+            } else {
+                $this->_input = array_merge($_GET, $_POST);
+            }
         }
         if ($key === null) {
             return $this->_input;

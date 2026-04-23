@@ -3,18 +3,20 @@ class TaskKanban extends PureComponent {
     constructor(props) {
         super(props);
         this.taskModel = new TaskModel();
+        this.employeeModel = new EmployeeModel();
         
         this.INITIAL_COLUMNS = {
-            'Mới': { id: 'Mới', title: 'TO DO', items: [] },
-            'Đang thực hiện': { id: 'Đang thực hiện', title: 'IN PROGRESS', items: [] },
-            'Chờ duyệt': { id: 'Chờ duyệt', title: 'PENDING APPROVAL', items: [] },
-            'Hoàn thành': { id: 'Hoàn thành', title: 'DONE', items: [] }
+            'Mới': { id: 'Mới', title: 'Mới', items: [] },
+            'Đang thực hiện': { id: 'Đang thực hiện', title: 'Đang thực hiện', items: [] },
+            'Chờ duyệt': { id: 'Chờ duyệt', title: 'Chờ duyệt', items: [] },
+            'Hoàn thành': { id: 'Hoàn thành', title: 'Hoàn thành', items: [] }
         };
 
         this.state = {
             boardData: JSON.parse(JSON.stringify(this.INITIAL_COLUMNS)),
             isModalOpen: false,
             editingTask: null,
+            employees: [],
             filter: {
                 search: ''
             }
@@ -28,6 +30,15 @@ class TaskKanban extends PureComponent {
         App.requireLogin();
         App.Component.trigger('leftNav.active', 'taskboard');
         this.fetchTasks();
+        this.fetchEmployees();
+    }
+
+    fetchEmployees() {
+        this.employeeModel.getEmployees({ pageSize: 100, active: 1 }).then(res => {
+            this.setState({ employees: res.data || [] });
+        }).catch(err => {
+            console.error('Lỗi tải danh sách nhân viên:', err);
+        });
     }
 
     componentDidUpdate(prevProps, prevState) {
@@ -69,9 +80,12 @@ class TaskKanban extends PureComponent {
     }
 
     fetchTasks() {
-        this.taskModel.getTasks(this.state.filter).then((data) => {
+        this.taskModel.getTasks(this.state.filter).then((res) => {
             const newBoard = JSON.parse(JSON.stringify(this.INITIAL_COLUMNS));
-            const items = Array.isArray(data) ? data : (data.items || []);
+            // res.data chứa { items, total, ... }
+            const data = res.data || {};
+            const items = Array.isArray(data.items) ? data.items : [];
+            
             items.forEach(task => {
                 const status = task.status || 'Mới';
                 if (newBoard[status]) {
@@ -82,6 +96,7 @@ class TaskKanban extends PureComponent {
             });
             this.setState({ boardData: newBoard });
         }).catch(err => {
+            console.error(err);
             Alert.open('Lỗi tải danh sách công việc');
         });
     }
@@ -155,9 +170,20 @@ class TaskKanban extends PureComponent {
                 this.closeModal();
             }
         } else {
-            this.taskModel.createTask(taskData).then(() => {
-                this.closeModal();
-                this.fetchTasks();
+            this.taskModel.createTask(taskData).then((res) => {
+                if (taskData.assignee) {
+                    this.taskModel.assignIndividual(res.data.id, taskData.assignee).then(() => {
+                        this.closeModal();
+                        this.fetchTasks();
+                    }).catch(() => {
+                        this.closeModal();
+                        this.fetchTasks();
+                        Alert.open('Task created but assignment failed');
+                    });
+                } else {
+                    this.closeModal();
+                    this.fetchTasks();
+                }
             }).catch(xhr => {
                 Alert.open('Lỗi tạo mới');
             });
@@ -257,7 +283,18 @@ class TaskKanban extends PureComponent {
         const isEdit = !!this.state.editingTask;
 
         return (
-            <div className="fixed inset-0 z-[1050] modal-overlay flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+            <div className="fixed inset-0 z-[1050] modal-overlay flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm"
+            >
+                <style>
+                    {`
+            .modal-overlay {
+                transform: none !important;
+            }
+            .modal-overlay * {
+                transform: none !important;
+            }
+        `}
+                </style>
                 <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-full">
                     {/* Modal Header */}
                     <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
@@ -278,7 +315,8 @@ class TaskKanban extends PureComponent {
                                 description: e.target.description.value,
                                 priority: e.target.priority ? e.target.priority.value : 'Vừa',
                                 progress: isEdit && e.target.progress ? parseInt(e.target.progress.value) : 0,
-                                due_time: e.target.due_time.value
+                                due_time: e.target.due_time.value,
+                                assignee: e.target.assignee ? e.target.assignee.value : null
                             });
                         }}>
                         <div className="px-8 py-8 space-y-8 overflow-y-auto">
@@ -291,16 +329,44 @@ class TaskKanban extends PureComponent {
                             {/* Task Metadata Grid */}
                             <div className="grid grid-cols-2 gap-6">
                                 {/* Task Priority Selection */}
-                                <div className="space-y-2">
+                                <div className="space-y-2" >
                                     <label className="block text-slate-700 text-xs font-semibold">Độ ưu tiên</label>
                                     <div className="relative">
-                                        <select name="priority" defaultValue={task.priority || 'Vừa'} className="w-full appearance-none px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-600/10 transition-all cursor-pointer outline-none">
-                                            <option value="Thấp">Thấp</option>
-                                            <option value="Vừa">Vừa</option>
-                                            <option value="Cao">Cao</option>
-                                        </select>
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                            <span className="material-symbols-outlined">expand_more</span>
+                                        <div className="flex gap-4">
+
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="priority"
+                                                    value="Thấp"
+                                                    defaultChecked={task.priority === 'Thấp'}
+                                                    className="accent-teal-600"
+                                                />
+                                                <span>Thấp</span>
+                                            </label>
+
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="priority"
+                                                    value="Vừa"
+                                                    defaultChecked={!task.priority || task.priority === 'Vừa'}
+                                                    className="accent-teal-600"
+                                                />
+                                                <span>Vừa</span>
+                                            </label>
+
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="priority"
+                                                    value="Cao"
+                                                    defaultChecked={task.priority === 'Cao'}
+                                                    className="accent-teal-600"
+                                                />
+                                                <span>Cao</span>
+                                            </label>
+
                                         </div>
                                     </div>
                                 </div>
@@ -323,34 +389,27 @@ class TaskKanban extends PureComponent {
                             {/* Assignee Selection (Custom Grid) */}
                             <div className="space-y-3">
                                 <label className="block text-slate-700 text-xs font-semibold">Assign To</label>
-                                <div className="grid grid-cols-4 gap-3">
-                                    <label className="cursor-pointer group">
-                                        <input className="hidden peer" name="assignee" type="radio" value="John D."/>
-                                        <div className="flex flex-col items-center gap-2 p-3 border border-slate-200 rounded-lg peer-checked:border-teal-600 peer-checked:bg-teal-50 hover:bg-slate-50 transition-all">
-                                            <img className="w-10 h-10 rounded-full" src="https://ui-avatars.com/api/?name=John+D&background=E5EEFF&color=00685F"/>
-                                            <span className="text-[11px] text-slate-600 font-semibold">John D.</span>
+                                <div className="grid grid-cols-4 gap-3 max-h-[280px] overflow-y-auto p-1 pr-2 custom-scrollbar">
+                                    {this.state.employees.map(emp => (
+                                        <label key={emp.id} className="cursor-pointer group">
+                                            <input 
+                                                className="hidden peer" 
+                                                name="assignee" 
+                                                type="radio" 
+                                                value={emp.id}
+                                                defaultChecked={task.assigneeID === emp.id}
+                                            />
+                                            <div className="flex flex-col items-center gap-2 p-3 border border-slate-200 rounded-lg peer-checked:border-teal-600 peer-checked:bg-teal-50 hover:bg-slate-50 transition-all h-full">
+                                                <img className="w-10 h-10 rounded-full shrink-0" src={`https://ui-avatars.com/api/?name=${encodeURIComponent(emp.fullname)}&background=random&color=fff`}/>
+                                                <span className="text-[10px] text-slate-600 font-semibold text-center line-clamp-2 leading-tight">{emp.fullname}</span>
+                                            </div>
+                                        </label>
+                                    ))}
+                                    {this.state.employees.length === 0 && (
+                                        <div className="col-span-4 text-center py-8 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                                            <span className="text-slate-400 text-xs font-medium">No employees available</span>
                                         </div>
-                                    </label>
-                                    <label className="cursor-pointer group">
-                                        <input defaultChecked className="hidden peer" name="assignee" type="radio" value="Sarah A."/>
-                                        <div className="flex flex-col items-center gap-2 p-3 border border-slate-200 rounded-lg peer-checked:border-teal-600 peer-checked:bg-teal-50 hover:bg-slate-50 transition-all">
-                                            <img className="w-10 h-10 rounded-full" src="https://ui-avatars.com/api/?name=Sarah+A&background=FFDAD6&color=93000A"/>
-                                            <span className="text-[11px] text-slate-600 font-semibold">Sarah A.</span>
-                                        </div>
-                                    </label>
-                                    <label className="cursor-pointer group">
-                                        <input className="hidden peer" name="assignee" type="radio" value="Mike K."/>
-                                        <div className="flex flex-col items-center gap-2 p-3 border border-slate-200 rounded-lg peer-checked:border-teal-600 peer-checked:bg-teal-50 hover:bg-slate-50 transition-all">
-                                            <img className="w-10 h-10 rounded-full" src="https://ui-avatars.com/api/?name=Mike+K&background=CBDBF5&color=0B1C30"/>
-                                            <span className="text-[11px] text-slate-600 font-semibold">Mike K.</span>
-                                        </div>
-                                    </label>
-                                    <div className="flex flex-col items-center justify-center gap-2 p-3 border border-dashed border-slate-300 rounded-lg hover:bg-slate-50 cursor-pointer">
-                                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                                            <span className="material-symbols-outlined">add</span>
-                                        </div>
-                                        <span className="text-[11px] text-slate-400 font-semibold">More</span>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -358,12 +417,6 @@ class TaskKanban extends PureComponent {
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                     <label className="block text-slate-700 text-xs font-semibold">Description</label>
-                                    <div className="flex gap-2 text-slate-400">
-                                        <span className="material-symbols-outlined text-lg cursor-pointer hover:text-slate-600">format_bold</span>
-                                        <span className="material-symbols-outlined text-lg cursor-pointer hover:text-slate-600">format_italic</span>
-                                        <span className="material-symbols-outlined text-lg cursor-pointer hover:text-slate-600">link</span>
-                                        <span className="material-symbols-outlined text-lg cursor-pointer hover:text-slate-600">format_list_bulleted</span>
-                                    </div>
                                 </div>
                                 <textarea name="description" defaultValue={task.description} className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-600/10 transition-all resize-none placeholder:text-slate-400 outline-none" placeholder="Describe the task requirements and acceptance criteria..." rows="4"></textarea>
                             </div>

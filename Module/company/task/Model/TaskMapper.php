@@ -133,7 +133,9 @@ class TaskMapper extends \Company\SQL\Mapper {
         $sortOrder = $filters['sortOrder'];
 
         // Base Query
-        $select = "SELECT SQL_CALC_FOUND_ROWS t.*";
+        $select = "SELECT SQL_CALC_FOUND_ROWS t.*, 
+                    (SELECT e.fullname FROM task_assignee ta2 JOIN employee e ON ta2.assigneeFK = e.id WHERE ta2.taskFK = t.id AND ta2.deleted = 0 AND e.deleted = 0 LIMIT 1) as assignee,
+                    (SELECT e.id FROM task_assignee ta2 JOIN employee e ON ta2.assigneeFK = e.id WHERE ta2.taskFK = t.id AND ta2.deleted = 0 AND e.deleted = 0 LIMIT 1) as assigneeID";
         $from = " FROM task t";
         $where = " WHERE t.siteFK = ? AND t.deleted = 0";
         $params = [$siteID];
@@ -146,9 +148,12 @@ class TaskMapper extends \Company\SQL\Mapper {
             $where .= " AND t.status = 'Chờ duyệt'";
         } else {
             // view = my_tasks
-            $from .= " JOIN task_assignee ta ON t.id = ta.taskFK";
-            $where .= " AND ta.assigneeFK = ? AND ta.deleted = 0";
-            $params[] = $actorID;
+            // Nếu là Manager/Admin thì không lọc theo assignee cá nhân, hiển thị toàn bộ
+            if (!$hasManageTaskPrivilege) {
+                $from .= " JOIN task_assignee ta ON t.id = ta.taskFK";
+                $where .= " AND ta.assigneeFK = ? AND ta.deleted = 0";
+                $params[] = $actorID;
+            }
         }
 
         // Filters
