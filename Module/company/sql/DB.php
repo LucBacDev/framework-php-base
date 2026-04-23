@@ -407,4 +407,20 @@ class DB {
         return $this;
     }
 
+    /**
+     * @param string $sql
+     * @param array $params
+     * @return array
+     */
+    function getRows($sql, $params = []) {
+        return $this->GetAll($sql, $params);
+    }
+
+    /**
+     * @return int
+     */
+    function getFoundRows() {
+        return (int) $this->GetOne("SELECT FOUND_ROWS()");
+    }
+
 }

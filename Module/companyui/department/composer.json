@@ -1,0 +1,6 @@
+{
+    "name": "companyui/department",
+    "description": "UI quản lý phòng ban",
+    "version": "1.0.0",
+    "type": "library"
+}

@@ -1,0 +1,4 @@
+.department-breadcrumb { margin-top: 10px; }
+.department-breadcrumb .breadcrumb { background: #f8f9fa; padding: 8px 15px; }
+.department-breadcrumb .breadcrumb-item a { color: #007bff; text-decoration: none; }
+.department-breadcrumb .breadcrumb-item.active a { color: #6c757d; cursor: default; }

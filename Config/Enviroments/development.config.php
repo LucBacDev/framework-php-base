@@ -107,102 +107,102 @@ $exports['kafka'] = [
         'sasl.password' => env("PACS_KAFKA_PASS", "Kafka_password123498")
     ],
     "topics" => [
-        "PACS_STOW" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "SYNC_ELASTIC" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "REBALANCE_STORAGE" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "PROCESS" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "MOVE_NEARLINE_STORAGE" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "AUTO_COPY_FILE" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "UPLOAD_AI" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "REMOVE_FILE" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "SYNC_DICOM_INFO" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "COPY_INSTANCE" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "PACS_MEDIA" => [
-            "partitions" => 10,
-            "retention.ms" => -1
-        ],
-        "THUMBNAIL_CACHE" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "MODIFY_FILE" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "MERGE_STUDY" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "SYNC_NUMBER_OF_SERIES_INSTANCES" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "OFFLINE_TO_NEARLINE" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "FORWARD_MESSAGE" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "ADVANCE_FORWARD" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "CACHE_VIEWER" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "MOVE_TO_TRASH" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "RESTORE_STUDY" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "UPDATE_DB_REMOVE_ONLINE_FILE" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "UPDATE_DB_MOVE_NEARLINE" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ],
-        "CACHE_FRAME_OFFSET" => [
-            "partitions" => 10,
-            "retention.ms" => 604800000
-        ]
+        // "PACS_STOW" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "SYNC_ELASTIC" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "REBALANCE_STORAGE" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "PROCESS" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "MOVE_NEARLINE_STORAGE" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "AUTO_COPY_FILE" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "UPLOAD_AI" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "REMOVE_FILE" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "SYNC_DICOM_INFO" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "COPY_INSTANCE" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "PACS_MEDIA" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => -1
+        // ],
+        // "THUMBNAIL_CACHE" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "MODIFY_FILE" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "MERGE_STUDY" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "SYNC_NUMBER_OF_SERIES_INSTANCES" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "OFFLINE_TO_NEARLINE" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "FORWARD_MESSAGE" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "ADVANCE_FORWARD" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "CACHE_VIEWER" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "MOVE_TO_TRASH" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "RESTORE_STUDY" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "UPDATE_DB_REMOVE_ONLINE_FILE" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "UPDATE_DB_MOVE_NEARLINE" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ],
+        // "CACHE_FRAME_OFFSET" => [
+        //     "partitions" => 10,
+        //     "retention.ms" => 604800000
+        // ]
     ],
     "replicationFactor" => $kafkaReplicas
 ];

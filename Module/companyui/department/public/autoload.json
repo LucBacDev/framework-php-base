@@ -1,0 +1,5 @@
+{
+  "model": "dir",
+  "view": "dir",
+  "construct.js": "file"
+}

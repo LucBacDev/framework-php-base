@@ -1,0 +1,6 @@
+{
+    "name": "companyui/task",
+    "description": "UI quản lý công việc Kanban",
+    "version": "1.0.0",
+    "type": "library"
+}

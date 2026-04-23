@@ -1,0 +1,66 @@
+# Story 4.5: Manager yêu cầu làm lại (PENDING_APPROVAL -> REWORK -> IN_PROGRESS)
+
+Status: ready-for-dev
+
+## Story
+
+As a Manager, I want yêu cầu làm lại, so that đảm bảo chất lượng đầu ra trước khi hoàn thành.
+
+## Acceptance Criteria
+
+1. Task ở trạng thái `Chờ duyệt`.
+2. Rework phải có lý do.
+3. Transition `PENDING_APPROVAL -> REWORK`.
+4. Staff có thể đưa về `IN_PROGRESS`.
+5. Ghi status log + audit.
+
+## Tasks / Subtasks
+
+- [x] Endpoint rework.
+- [x] Validate reason.
+- [x] Guard transitions.
+- [x] Persist logs.
+
+## Dev Notes
+
+- Giữ reason trong audit payload.
+
+## Diagrams
+
+### Sequence
+- Manager gửi rework + reason.
+- API validate, đổi trạng thái REWORK, ghi logs.
+- Staff resume về IN_PROGRESS.
+
+### Sequence diagram (Mermaid)
+```mermaid
+sequenceDiagram
+  actor Manager
+  actor Staff
+  participant API as TaskWorkflowCtrl
+  participant DB as MySQL
+  Manager->>API: action rework(reason)
+  API->>DB: update status to REWORK + logs
+  API-->>Manager: result(true)
+  Staff->>API: action start/resume
+  API->>DB: update status to IN_PROGRESS + logs
+```
+
+## Dev Agent Record
+### Agent Model Used
+Codex 5.3
+### Debug Log References
+- N/A
+### Completion Notes List
+- Context copied from planning story and normalized to implementation artifact.
+- Đã cung cấp endpoint `POST /:siteID/rest/task/tasks/:taskID/rework`.
+- Yêu cầu bắt buộc Manager phải ghi rõ lý do từ chối vào tham số `note` (nếu rỗng bị ném lỗi 400).
+- Quyền Manager (`manageTask`) được kiểm soát gắt gao tương tự lúc Approve.
+- `TaskWorkflowGuard` xử lý chuyển trạng thái vòng ngược từ `Chờ duyệt` về `Đang thực hiện`, đóng gói quy trình bảo vệ và lưu audit log liền mạch.
+- BỎ QUA Unit test.
+
+### File List
+- `_bmad-output/implementation-artifacts/4-5-manager-yeu-cau-lam-lai-pending-approval-rework-in-progress.md`
+- `Module/company/task/router.php`
+- `Module/company/task/Controller/TaskCtrl.php`
+- `Module/company/task/Model/TaskMapper.php`

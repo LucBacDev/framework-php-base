@@ -1,0 +1,9 @@
+{
+    "name": "company/department",
+    "description": "Quản lý phòng ban",
+    "version": "1.0.0",
+    "type": "library",
+    "authors": [
+        { "name": "LucBacDev", "email": "lucbacit@gmail.com" }
+    ]
+}

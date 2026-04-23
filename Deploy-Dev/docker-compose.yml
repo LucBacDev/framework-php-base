@@ -113,8 +113,8 @@ services:
     ports:
       - 3306:3306
     volumes:
-      - mysql_data:/var/lib/mysql
-      - mysql_log:/var/log/mysql
+      - ${DOCKER_ROOT:-/docker}/local/mysql:/var/lib/mysql
+      - ${DOCKER_ROOT:-/docker}/local/mysql-log:/var/log/mysql
     networks:
       - pacsnet
     logging:
@@ -186,7 +186,3 @@ services:
 
 networks:
   pacsnet:
-
-volumes:
-  mysql_data:
-  mysql_log:

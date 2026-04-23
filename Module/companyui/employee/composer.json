@@ -1,0 +1,6 @@
+{
+    "name": "companyui/employee",
+    "description": "UI quản lý nhân sự",
+    "version": "1.0.0",
+    "type": "library"
+}

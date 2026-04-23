@@ -23,6 +23,8 @@
         "company/cassandra": "*",
         "company/vrzip": "*",
         "company/vrtar": "*",
+        "company/department": "*",
+        "company/employee": "*",
         "companyui/defaulttheme": "*",
         "companyui/user": "*",
         "companyui/module": "*",
@@ -32,6 +34,10 @@
         "companyui/dict": "*",
         "companyui/queue": "*",
         "companyui/license": "*",
-        "companyui/service": "*"
+        "companyui/service": "*",
+        "companyui/department": "*",
+        "companyui/employee": "*",
+        "company/task": "*",
+        "companyui/task": "*"
     }
 }
