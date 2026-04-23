@@ -15,11 +15,11 @@ As a Manager, I want giao task cho một nhân viên cụ thể, so that có ng�
 
 ## Tasks / Subtasks
 
-- [ ] Tạo endpoint assign individual.
-- [ ] Check auth/site/privilege/scope.
-- [ ] Validate assignee active.
-- [ ] Persist assignment + audit.
-- [ ] Viết test success/fail.
+- [x] Tạo endpoint assign individual.
+- [x] Check auth/site/privilege/scope.
+- [x] Validate assignee active.
+- [x] Persist assignment + audit.
+- [x] Viết test success/fail.
 
 ## Dev Notes
 
@@ -62,6 +62,16 @@ Codex 5.3
 
 ### Completion Notes List
 - Context copied from planning story and normalized to implementation artifact.
+- Đã tạo bảng `task_assignee` và cấu trúc truy vấn tương ứng.
+- Đã thêm route `POST /:siteID/rest/task/tasks/:taskID/assign/individual`.
+- Đã thực hiện validate Employee active bằng `EmployeeMapper`.
+- Đã lưu log audit sau khi assign.
+- Đã tạo unit test `AssignIndividualTest.php`.
 
 ### File List
 - `_bmad-output/implementation-artifacts/1-2-giao-task-cho-ca-nhan-assignee-don.md`
+- `Module/company/task/sql/task_assignee.table.sql`
+- `Module/company/task/router.php`
+- `Module/company/task/Controller/TaskCtrl.php`
+- `Module/company/task/Model/TaskMapper.php`
+- `tests/Task/AssignIndividualTest.php`

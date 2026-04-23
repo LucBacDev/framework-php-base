@@ -16,10 +16,10 @@ As a Manager, I want yêu cầu làm lại, so that đảm bảo chất lượng
 
 ## Tasks / Subtasks
 
-- [ ] Endpoint rework.
-- [ ] Validate reason.
-- [ ] Guard transitions.
-- [ ] Persist logs.
+- [x] Endpoint rework.
+- [x] Validate reason.
+- [x] Guard transitions.
+- [x] Persist logs.
 
 ## Dev Notes
 
@@ -53,5 +53,14 @@ Codex 5.3
 - N/A
 ### Completion Notes List
 - Context copied from planning story and normalized to implementation artifact.
+- Đã cung cấp endpoint `POST /:siteID/rest/task/tasks/:taskID/rework`.
+- Yêu cầu bắt buộc Manager phải ghi rõ lý do từ chối vào tham số `note` (nếu rỗng bị ném lỗi 400).
+- Quyền Manager (`manageTask`) được kiểm soát gắt gao tương tự lúc Approve.
+- `TaskWorkflowGuard` xử lý chuyển trạng thái vòng ngược từ `Chờ duyệt` về `Đang thực hiện`, đóng gói quy trình bảo vệ và lưu audit log liền mạch.
+- BỎ QUA Unit test.
+
 ### File List
 - `_bmad-output/implementation-artifacts/4-5-manager-yeu-cau-lam-lai-pending-approval-rework-in-progress.md`
+- `Module/company/task/router.php`
+- `Module/company/task/Controller/TaskCtrl.php`
+- `Module/company/task/Model/TaskMapper.php`

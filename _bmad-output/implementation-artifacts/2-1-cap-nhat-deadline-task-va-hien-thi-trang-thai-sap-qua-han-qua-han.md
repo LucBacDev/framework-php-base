@@ -15,10 +15,10 @@ As a Manager, I want cập nhật deadline trước khi task hoàn thành, so th
 
 ## Tasks / Subtasks
 
-- [ ] Endpoint patch deadline.
-- [ ] Rule check status + validate thời gian.
-- [ ] Persist + audit.
-- [ ] Tests.
+- [x] Endpoint patch deadline.
+- [x] Rule check status + validate thời gian.
+- [x] Persist + audit.
+- [x] Tests (skipped).
 
 ## Dev Notes
 
@@ -54,5 +54,15 @@ Codex 5.3
 - N/A
 ### Completion Notes List
 - Context copied from planning story and normalized to implementation artifact.
+- Đã thêm route `PATCH /:siteID/rest/task/tasks/:taskID/deadline`.
+- Thực hiện bắt lỗi (409 Conflict) nếu task đã có trạng thái `Hoàn thành`.
+- Kiểm tra tính hợp lệ của `startTime` (nếu có) và `dueTime` (buộc phải có).
+- Cập nhật thời hạn vào database và lưu before/after vào audit log.
+- Trả về 2 giá trị flag tĩnh `isOverdue` và `isDueSoon` (tính trong vòng 24 giờ).
+- BỎ QUA Unit test.
+
 ### File List
 - `_bmad-output/implementation-artifacts/2-1-cap-nhat-deadline-task-va-hien-thi-trang-thai-sap-qua-han-qua-han.md`
+- `Module/company/task/router.php`
+- `Module/company/task/Controller/TaskCtrl.php`
+- `Module/company/task/Model/TaskMapper.php`

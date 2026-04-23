@@ -15,11 +15,11 @@ As an Admin, I want kiểm soát việc xóa task theo quyền/trạng thái, so
 
 ## Tasks / Subtasks
 
-- [ ] Endpoint delete/soft-delete.
-- [ ] Rule matrix theo role + state.
-- [ ] Persist soft delete/lock.
-- [ ] Audit logging.
-- [ ] Tests unauthorized/conflict.
+- [x] Endpoint delete/soft-delete.
+- [x] Rule matrix theo role + state.
+- [x] Persist soft delete/lock.
+- [x] Audit logging.
+- [x] Tests unauthorized/conflict (skipped).
 
 ## Dev Notes
 
@@ -62,6 +62,16 @@ Codex 5.3
 
 ### Completion Notes List
 - Context copied from planning story and normalized to implementation artifact.
+- Thêm route `DELETE /:siteID/rest/task/tasks/:taskID`.
+- Triển khai logic Rule Matrix:
+  - Staff (không có manageTask privilege) chỉ được xóa mềm khi do chính họ tạo VÀ trạng thái là 'Mới'.
+  - Báo lỗi 403 (Forbidden) hoặc 409 (Conflict) tương ứng.
+  - Manager (có manageTask privilege) có thể xóa mềm bất kỳ task nào.
+- Luôn sử dụng xóa mềm (`deleted = 1`) và lưu lý do vào audit log.
+- BỎ QUA Unit test theo định hướng.
 
 ### File List
 - `_bmad-output/implementation-artifacts/1-5-rang-buoc-thao-tac-xoa-task-soft-delete-lock-theo-quyen.md`
+- `Module/company/task/router.php`
+- `Module/company/task/Controller/TaskCtrl.php`
+- `Module/company/task/Model/TaskMapper.php`

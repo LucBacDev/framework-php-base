@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TealFlow - Create New Task</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "on-tertiary-fixed": "#370e00",
+                  "on-error-container": "#93000a",
+                  "surface-container-lowest": "#ffffff",
+                  "on-tertiary-fixed-variant": "#773215",
+                  "on-secondary-fixed": "#131b2e",
+                  "primary-container": "#008378",
+                  "error-container": "#ffdad6",
+                  "on-secondary": "#ffffff",
+                  "on-primary": "#ffffff",
+                  "inverse-on-surface": "#eaf1ff",
+                  "surface-container-highest": "#d3e4fe",
+                  "surface": "#f8f9ff",
+                  "surface-variant": "#d3e4fe",
+                  "tertiary-fixed-dim": "#ffb59a",
+                  "primary-fixed-dim": "#6bd8cb",
+                  "on-tertiary-container": "#fffbff",
+                  "on-background": "#0b1c30",
+                  "background": "#f8f9ff",
+                  "tertiary-fixed": "#ffdbce",
+                  "surface-container-low": "#eff4ff",
+                  "on-surface": "#0b1c30",
+                  "on-surface-variant": "#3d4947",
+                  "primary": "#00685f",
+                  "on-tertiary": "#ffffff",
+                  "surface-dim": "#cbdbf5",
+                  "secondary-fixed": "#dae2fd",
+                  "on-secondary-fixed-variant": "#3f465c",
+                  "on-primary-fixed-variant": "#005049",
+                  "outline-variant": "#bcc9c6",
+                  "tertiary-container": "#b05e3d",
+                  "surface-tint": "#006a61",
+                  "surface-bright": "#f8f9ff",
+                  "inverse-primary": "#6bd8cb",
+                  "inverse-surface": "#213145",
+                  "on-primary-container": "#f4fffc",
+                  "secondary": "#565e74",
+                  "error": "#ba1a1a",
+                  "on-error": "#ffffff",
+                  "tertiary": "#924628",
+                  "secondary-fixed-dim": "#bec6e0",
+                  "surface-container-high": "#dce9ff",
+                  "secondary-container": "#dae2fd",
+                  "on-primary-fixed": "#00201d",
+                  "outline": "#6d7a77",
+                  "surface-container": "#e5eeff",
+                  "primary-fixed": "#89f5e7",
+                  "on-secondary-container": "#5c647a"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "base-unit": "4px",
+                  "gutter": "16px",
+                  "column-width": "280px",
+                  "margin-page": "32px",
+                  "card-padding": "12px"
+          },
+          "fontFamily": {
+                  "body-sm": ["Inter"],
+                  "label-bold": ["Inter"],
+                  "headline-md": ["Manrope"],
+                  "display-lg": ["Manrope"],
+                  "body-base": ["Inter"],
+                  "label-caps": ["Inter"]
+          },
+          "fontSize": {
+                  "body-sm": ["13px", {"lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400"}],
+                  "label-bold": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                  "headline-md": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                  "display-lg": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                  "body-base": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+                  "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+    }
+    .modal-overlay {
+      background-color: rgba(11, 28, 48, 0.4);
+      backdrop-filter: blur(8px);
+    }
+  </style>
+</head>
+<body class="bg-background font-body-base text-on-background m-0 p-0 overflow-hidden">
+<!-- Background Kanban Shell (Simulated) -->
+<div class="flex h-screen w-full overflow-hidden blur-sm pointer-events-none grayscale-[20%]">
+<!-- SideNavBar (Shared Component) -->
+<aside class="flex flex-col h-full p-4 gap-2 border-r border-slate-200 bg-slate-50 w-64 shrink-0">
+<div class="flex items-center gap-3 px-2 py-4 mb-4">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-white font-bold">A</div>
+<div>
+<div class="text-lg font-bold text-slate-900 font-headline-md">Project Alpha</div>
+<div class="text-[10px] text-slate-500 font-label-caps">Engineering Team</div>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<div class="flex items-center gap-3 px-3 py-2 bg-teal-50 text-teal-700 rounded-lg font-label-bold">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+          Dashboard
+        </div>
+<div class="flex items-center gap-3 px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-label-bold">
+<span class="material-symbols-outlined" data-icon="view_kanban">view_kanban</span>
+          Kanban Board
+        </div>
+<div class="flex items-center gap-3 px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-label-bold">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+          Backlog
+        </div>
+</nav>
+</aside>
+<div class="flex-1 flex flex-col overflow-hidden">
+<!-- TopAppBar (Shared Component) -->
+<header class="flex items-center justify-between w-full px-6 py-3 bg-white border-b border-slate-200">
+<div class="flex items-center gap-8">
+<span class="text-xl font-extrabold tracking-tight text-teal-600 font-headline-md">TealFlow</span>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 material-symbols-outlined" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-1.5 bg-slate-100 border-none rounded-full text-sm w-64" placeholder="Search tasks..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-label-bold">New Task</button>
+<span class="material-symbols-outlined text-slate-500" data-icon="notifications">notifications</span>
+<img alt="User avatar" class="w-8 h-8 rounded-full bg-slate-200" data-alt="professional headshot of a team lead in a bright office environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxUKOASkOyGsFMTtwLkxIxL6QsoC2CbgA_fdrDV3OtInJ_RqyWpbm2_EGwOPohlnVEiONDOIFEJe4X4JcLwHSFteHvfuQDlSeFccetWxaquSltYqdCZRdqVk7SP8kPzTQZtTqxyHN6c_HEg3I7XSjfM0Zd0ksPAeBxl_GILqNfd70dcZh73oGjmj7H2A7zKZzRVx38ZioZQ6UkxadaR9OPMjnk9P_LIqbGkDE54GNIE10KTVziER_xa5yfJ-7DxO2hQO2lq5oDYfdK"/>
+</div>
+</header>
+<!-- Main Canvas (Kanban Board) -->
+<main class="flex-1 overflow-x-auto p-8 flex gap-6 bg-surface">
+<!-- To Do Column -->
+<div class="flex flex-col w-[280px] shrink-0 gap-4">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-slate-500 uppercase tracking-widest">To Do <span class="ml-2 text-xs bg-slate-200 px-2 py-0.5 rounded-full text-slate-700">3</span></span>
+<span class="material-symbols-outlined text-slate-400" data-icon="more_horiz">more_horiz</span>
+</div>
+<div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex flex-col gap-3">
+<div class="text-sm font-label-bold text-slate-900">Database optimization</div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700">Refactor</span>
+</div>
+</div>
+</div>
+<!-- In Progress Column -->
+<div class="flex flex-col w-[280px] shrink-0 gap-4">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-slate-500 uppercase tracking-widest">In Progress <span class="ml-2 text-xs bg-slate-200 px-2 py-0.5 rounded-full text-slate-700">1</span></span>
+<span class="material-symbols-outlined text-slate-400" data-icon="more_horiz">more_horiz</span>
+</div>
+<div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex flex-col gap-3">
+<div class="text-sm font-label-bold text-slate-900">Auth middleware fix</div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700">Bug</span>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-6">
+<!-- Modal Container -->
+<div class="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden border border-slate-200">
+<!-- Modal Header -->
+<div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+<div>
+<h2 class="font-headline-md text-display-lg text-on-background">Create New Task</h2>
+<p class="font-body-sm text-slate-500 mt-1">Assign a new task to your team workspace.</p>
+</div>
+<button class="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-slate-50 rounded-full">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<!-- Form Content -->
+<div class="px-8 py-8 space-y-8 overflow-y-auto max-h-[768px]">
+<!-- Task Title -->
+<div class="space-y-2">
+<label class="block font-label-bold text-slate-700">Task Title</label>
+<input class="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-body-base focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-slate-400" placeholder="e.g. Implement User Permissions" type="text"/>
+</div>
+<!-- Task Metadata Grid -->
+<div class="grid grid-cols-2 gap-6">
+<!-- Task Type Selection -->
+<div class="space-y-2">
+<label class="block font-label-bold text-slate-700">Task Type</label>
+<div class="relative">
+<select class="w-full appearance-none px-4 py-3 bg-white border border-slate-300 rounded-lg text-body-base focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all cursor-pointer">
+<option value="feature">Feature</option>
+<option value="bug">Bug</option>
+<option value="refactor">Refactor</option>
+<option value="design">Design</option>
+</select>
+<div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+<span class="material-symbols-outlined" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Due Date Picker -->
+<div class="space-y-2">
+<label class="block font-label-bold text-slate-700">Due Date</label>
+<div class="relative">
+<input class="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-body-base focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all cursor-pointer" type="date"/>
+<div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 bg-white">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Assignee Selection (Custom Grid) -->
+<div class="space-y-3">
+<label class="block font-label-bold text-slate-700">Assign To</label>
+<div class="grid grid-cols-4 gap-3">
+<label class="cursor-pointer group">
+<input class="hidden peer" name="assignee" type="radio"/>
+<div class="flex flex-col items-center gap-2 p-3 border border-slate-200 rounded-lg peer-checked:border-primary peer-checked:bg-teal-50 hover:bg-slate-50 transition-all">
+<img class="w-10 h-10 rounded-full" data-alt="professional portrait of a male developer with glasses in a modern studio" src="https://lh3.googleusercontent.com/aida-public/AB6AXuASxLmvGSyAiMcUvsWFksiOOMEN8XCeAoTah5MlcNfXcHVTAbjNfIZ7qO3LDHzdcd3-rUXGSAYNA6-VpfACgdRT41u-jzZCb-4E5xFr5smVzVNH6O9hrGrz1x6_Ss309eqBDEZdNXvnTBbuVmsFsQc7pM8y2pSQ-PSLdhr1vav1TvxR1TJrHvRT3WMeJePyIMmUy0tgqMVbCRPocCGEsQVKartY-cOvizC7974tCWDABxylVX_ACgr3G494-Vpd2xH3-1OacZUSYuiE"/>
+<span class="text-[11px] font-label-bold text-slate-600">John D.</span>
+</div>
+</label>
+<label class="cursor-pointer group">
+<input checked="" class="hidden peer" name="assignee" type="radio"/>
+<div class="flex flex-col items-center gap-2 p-3 border border-slate-200 rounded-lg peer-checked:border-primary peer-checked:bg-teal-50 hover:bg-slate-50 transition-all">
+<img class="w-10 h-10 rounded-full" data-alt="friendly female designer smiling with creative office in background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZAVsDraRFpoWwrUnR61aLK9p1JlbNfXLTwiAcJDb5PK09tAqCdD8BB7PzJ7wcIV8wYzm_oSy_VwTocRb2aMxBWs6bn5IYnqrQnUqjV9GytNn8lnMuQVWQPVJhSs1XAJZL73sy_HG3xt2IJ5aMFKE448EZT4AFo41osG_R0kuXR6UAqHzDmAt-DWvAH7cUKnIe-teNjEbRga0cdqiGu8ovCuqpVnoSWeyhUHA4ZFaB36Tiiwcdjb3XUwXmNdOEGveHeDW-1cX7lXUj"/>
+<span class="text-[11px] font-label-bold text-slate-600">Sarah A.</span>
+</div>
+</label>
+<label class="cursor-pointer group">
+<input class="hidden peer" name="assignee" type="radio"/>
+<div class="flex flex-col items-center gap-2 p-3 border border-slate-200 rounded-lg peer-checked:border-primary peer-checked:bg-teal-50 hover:bg-slate-50 transition-all">
+<img class="w-10 h-10 rounded-full" data-alt="headshot of young male project manager with neutral expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAISG_MeHbiH-NDuAdQePqPpoz9DTyf48cVqfqRZPjxApUh4yoiFO_138a7OEdEIGaA8d1lJkD0YWOno3k7oUw_inPfF6LsjR2bdcTWLM9_dgG3G6y5MyuIMoNdqlJpViaA3czniiwmk5QplEOA69rd7epvecoyKpAhtOntye94SF6Hd1rwEMHQ4b8-Fp63h2aSgF9f671kXPb79Oq6RTDkje_wU9AGSHkz3JU9ph2ue0Na4zFHVDRjFwRZ8oe2qm1gyZnSdd3NtYY3"/>
+<span class="text-[11px] font-label-bold text-slate-600">Mike K.</span>
+</div>
+</label>
+<div class="flex flex-col items-center justify-center gap-2 p-3 border border-dashed border-slate-300 rounded-lg hover:bg-slate-50 cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</div>
+<span class="text-[11px] font-label-bold text-slate-400">More</span>
+</div>
+</div>
+</div>
+<!-- Description (Simulated Rich Text) -->
+<div class="space-y-2">
+<div class="flex items-center justify-between">
+<label class="block font-label-bold text-slate-700">Description</label>
+<div class="flex gap-2 text-slate-400">
+<span class="material-symbols-outlined text-lg cursor-pointer hover:text-slate-600" data-icon="format_bold">format_bold</span>
+<span class="material-symbols-outlined text-lg cursor-pointer hover:text-slate-600" data-icon="format_italic">format_italic</span>
+<span class="material-symbols-outlined text-lg cursor-pointer hover:text-slate-600" data-icon="link">link</span>
+<span class="material-symbols-outlined text-lg cursor-pointer hover:text-slate-600" data-icon="format_list_bulleted">format_list_bulleted</span>
+</div>
+</div>
+<textarea class="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-body-base focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all resize-none placeholder:text-slate-400" placeholder="Describe the task requirements and acceptance criteria..." rows="4"></textarea>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+<button class="px-6 py-2.5 rounded-lg text-body-base font-label-bold text-slate-600 hover:bg-slate-200 transition-all active:scale-95">
+          Cancel
+        </button>
+<button class="px-8 py-2.5 rounded-lg text-body-base font-label-bold bg-primary text-white hover:bg-teal-700 transition-all active:scale-95 shadow-lg shadow-teal-600/10">
+          Create Task
+        </button>
+</div>
+</div>
+</div>
+</body></html>

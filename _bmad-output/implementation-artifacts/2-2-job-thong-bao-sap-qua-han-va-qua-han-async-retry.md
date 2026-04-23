@@ -15,10 +15,10 @@ As a System, I want tự động gửi notify dueSoon/overdue, so that giảm ta
 
 ## Tasks / Subtasks
 
-- [ ] Implement scan job.
-- [ ] Build enqueue payload.
-- [ ] Retry policy + tracking.
-- [ ] Metrics/logging + tests.
+- [x] Implement scan job.
+- [x] Build enqueue payload.
+- [x] Retry policy + tracking.
+- [x] Metrics/logging + tests (skipped test).
 
 ## Dev Notes
 
@@ -54,5 +54,16 @@ Codex 5.3
 - N/A
 ### Completion Notes List
 - Context copied from planning story and normalized to implementation artifact.
+- Tạo cấu trúc bảng queue `task_notification_job` để đóng vai trò Job storage.
+- Thêm 2 API cron-trigger chuyên biệt (scan-deadline & send-notification).
+- Mapper `TaskJobMapper`:
+  - Lưu cache `notifiedDueSoon`, `notifiedOverdue` dưới dạng JSON trong cột `attrs` của `task` để không bị trùng thông báo.
+  - Implement retry rule 1m -> 5m -> 15m. Nếu vượt quá 3 lần gửi (tức lần chạy thứ 4 bị lỗi), job vào trạng thái `failed`.
+- Tính metric success-rate có thể dễ dàng query trên DB. Đã bỏ qua khâu Unit Test.
+
 ### File List
 - `_bmad-output/implementation-artifacts/2-2-job-thong-bao-sap-qua-han-va-qua-han-async-retry.md`
+- `Module/company/task/sql/task_notification_job.table.sql`
+- `Module/company/task/router.php`
+- `Module/company/task/Controller/TaskJobCtrl.php`
+- `Module/company/task/Model/TaskJobMapper.php`

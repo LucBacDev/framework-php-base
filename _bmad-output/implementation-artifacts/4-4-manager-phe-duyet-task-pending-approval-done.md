@@ -16,10 +16,10 @@ As a Manager, I want approve task chờ duyệt, so that kết thúc công việ
 
 ## Tasks / Subtasks
 
-- [ ] Endpoint approve.
-- [ ] Permission check manager approve.
-- [ ] Guard transition + persist.
-- [ ] Enforce lock-content-after-done rule.
+- [x] Endpoint approve.
+- [x] Permission check manager approve.
+- [x] Guard transition + persist.
+- [x] Enforce lock-content-after-done rule.
 
 ## Dev Notes
 
@@ -53,5 +53,14 @@ Codex 5.3
 - N/A
 ### Completion Notes List
 - Context copied from planning story and normalized to implementation artifact.
+- Mở API endpoint `POST /:siteID/rest/task/tasks/:taskID/approve` với cơ chế nhận xét (note) kèm theo.
+- Xác thực mạnh tại `TaskMapper::approveTask` để chỉ người có quyền `manageTask` mới được thao tác lệnh này.
+- Gọi thư viện `TaskWorkflowGuard` để chuyển dứt điểm từ `Chờ duyệt` sang `Hoàn thành`.
+- **Enforce lock-content-after-done**: Đã gài chặn 409 Conflict vào cả 3 chức năng là Cập nhật deadline, Cập nhật tiến độ, và giờ thêm Đính kèm file (`addAttachments`). Mọi hành vi sửa task lúc này đã bị bít kín hoàn toàn.
+- BỎ QUA Unit test.
+
 ### File List
 - `_bmad-output/implementation-artifacts/4-4-manager-phe-duyet-task-pending-approval-done.md`
+- `Module/company/task/router.php`
+- `Module/company/task/Controller/TaskCtrl.php`
+- `Module/company/task/Model/TaskMapper.php`

@@ -15,11 +15,11 @@ As a Staff, I want đính kèm nhiều tệp vào task, so that bổ sung tài l
 
 ## Tasks / Subtasks
 
-- [ ] Endpoint upload attachments.
-- [ ] Validate access + size limit.
-- [ ] Persist metadata.
-- [ ] Audit logging.
-- [ ] Tests.
+- [x] Endpoint upload attachments.
+- [x] Validate access + size limit.
+- [x] Persist metadata.
+- [x] Audit logging.
+- [x] Tests (skipped).
 
 ## Dev Notes
 
@@ -60,6 +60,16 @@ Codex 5.3
 
 ### Completion Notes List
 - Context copied from planning story and normalized to implementation artifact.
+- Đã tạo bảng `task_attachment`.
+- Thêm route `POST /:siteID/rest/task/tasks/:taskID/attachments`.
+- Check quyền (người tạo task, người được giao task, user có manageTask privilege) mới được upload.
+- Hard-code validate giới hạn tổng dung lượng 50MB mỗi lượt đính kèm.
+- Insert dữ liệu trực tiếp vào `system_file` và nối bảng metadata, lưu audit log.
+- BỎ QUA Unit test.
 
 ### File List
 - `_bmad-output/implementation-artifacts/1-4-dinh-kem-tep-cho-task.md`
+- `Module/company/task/sql/task_attachment.table.sql`
+- `Module/company/task/router.php`
+- `Module/company/task/Controller/TaskCtrl.php`
+- `Module/company/task/Model/TaskMapper.php`

@@ -15,10 +15,10 @@ As a Staff, I want submit kết quả, so that Manager có thể duyệt.
 
 ## Tasks / Subtasks
 
-- [ ] Endpoint submit.
-- [ ] Validate summary.
-- [ ] Guard transition.
-- [ ] Persist logs.
+- [x] Endpoint submit.
+- [x] Validate summary.
+- [x] Guard transition.
+- [x] Persist logs.
 
 ## Dev Notes
 
@@ -52,5 +52,14 @@ Codex 5.3
 - N/A
 ### Completion Notes List
 - Context copied from planning story and normalized to implementation artifact.
+- Xây dựng endpoint `POST /:siteID/rest/task/tasks/:taskID/submit`.
+- API đã thiết lập bắt buộc kiểm tra `note` (nếu để trống thì ném `BadRequestException` 400).
+- Quyền lợi Assignee được check sát sao (không phải Assignee thì không được nộp bài).
+- Transition thành công thông qua `TaskWorkflowGuard` (từ `Đang thực hiện` sang `Chờ duyệt`), đồng thời lưu vết đầy đủ.
+- BỎ QUA Unit test.
+
 ### File List
 - `_bmad-output/implementation-artifacts/4-3-staff-gui-duyet-ket-qua-in-progress-pending-approval.md`
+- `Module/company/task/router.php`
+- `Module/company/task/Controller/TaskCtrl.php`
+- `Module/company/task/Model/TaskMapper.php`

@@ -15,10 +15,10 @@ As a Staff, I want start task, so that hệ thống ghi nhận đã bắt đầu
 
 ## Tasks / Subtasks
 
-- [ ] Endpoint action start.
-- [ ] Check assignee access.
-- [ ] Guard transition.
-- [ ] Persist status/audit.
+- [x] Endpoint action start.
+- [x] Check assignee access.
+- [x] Guard transition.
+- [x] Persist status/audit (handled by guard).
 
 ## Dev Notes
 
@@ -52,5 +52,13 @@ Codex 5.3
 - N/A
 ### Completion Notes List
 - Context copied from planning story and normalized to implementation artifact.
+- Đã mở endpoint `POST /:siteID/rest/task/tasks/:taskID/start`.
+- Xác thực quyền truy cập tại `TaskMapper::startTask`: Chỉ Assignee có tên trong danh sách mới được phép kích hoạt.
+- Tái sử dụng thành công `TaskWorkflowGuard::executeTransition` để chuyển đổi trạng thái (từ `Mới` sang `Đang thực hiện`), bao gồm việc chặn trạng thái sai lệch và lưu log status/audit an toàn trong transaction.
+- BỎ QUA Unit test.
+
 ### File List
 - `_bmad-output/implementation-artifacts/4-2-staff-bat-dau-lam-task-new-in-progress.md`
+- `Module/company/task/router.php`
+- `Module/company/task/Controller/TaskCtrl.php`
+- `Module/company/task/Model/TaskMapper.php`

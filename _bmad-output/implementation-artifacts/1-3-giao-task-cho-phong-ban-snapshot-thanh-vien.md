@@ -15,11 +15,11 @@ As a Manager, I want giao task cho cả phòng ban, so that mọi thành viên h
 
 ## Tasks / Subtasks
 
-- [ ] Endpoint assign by department.
-- [ ] Scope check department.
-- [ ] Query active members.
-- [ ] Snapshot assignees.
-- [ ] Audit + tests.
+- [x] Endpoint assign by department.
+- [x] Scope check department.
+- [x] Query active members.
+- [x] Snapshot assignees.
+- [x] Audit + tests (tests skipped per user request).
 
 ## Dev Notes
 
@@ -61,6 +61,13 @@ Codex 5.3
 
 ### Completion Notes List
 - Context copied from planning story and normalized to implementation artifact.
+- Đã thêm route `POST /:siteID/rest/task/tasks/:taskID/assign/department`.
+- Đã thực hiện validate lấy danh sách thành viên active trong phòng ban bằng `EmployeeMapper`.
+- Đã snapshot assignees, tạo ra các bản ghi `task_assignee` và ghi log audit với tổng số lượng được snapshot.
+- BỎ QUA việc tạo unit test theo chỉ thị trực tiếp từ người dùng.
 
 ### File List
 - `_bmad-output/implementation-artifacts/1-3-giao-task-cho-phong-ban-snapshot-thanh-vien.md`
+- `Module/company/task/router.php`
+- `Module/company/task/Controller/TaskCtrl.php`
+- `Module/company/task/Model/TaskMapper.php`
