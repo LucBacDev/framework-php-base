@@ -12,7 +12,8 @@ App.Component.trigger('Module', modules);
 Lang.load('companyui', 'employee').then(() => {
     let navs = App.Component.getEventState('PageNavigator') || [];
 
-    if (App.isFullControl) {
+    // Chỉ hiện nếu có quyền Quản lý người dùng hoặc Admin tối cao
+    if (App.getUser().hasPrivilege('manageUser') || App.isFullControl) {
         navs.push({
             'name': Lang.t("emp.nav.name"), 'icon': 'ti ti-id-badge',
             'module': "companyui/employee",

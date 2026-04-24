@@ -72,9 +72,17 @@ class DepartmentMapper extends \Company\SQL\Mapper {
             $updateData['parentID'] = 0;
         }
 
-        // validate code phải unique
+        // validate code phải unique trong cùng 1 site
         if ($updateData['code']) {
-            $this->makeInstance()->uniqueOrFail('code', $updateData['code'], $id);
+            $existing = $this->makeInstance()
+                ->filterCode($updateData['code'])
+                ->filterSiteFK($input['siteFK'] ?? $attrs['siteFK'])
+                ->filterNotID($id)
+                ->getEntity();
+            
+            if ($existing->id) {
+                throw new E\BadRequestException("Mã phòng ban '" . $updateData['code'] . "' đã tồn tại trong site này");
+            }
         }
 
         if ($isInsert) {

@@ -12,7 +12,8 @@ App.Component.trigger('Module', modules);
 Lang.load('companyui', 'department').then(() => {
     let navs = App.Component.getEventState('PageNavigator') || [];
 
-    if (App.isFullControl) {
+    // Chỉ hiện nếu có quyền Quản lý phòng ban hoặc Admin tối cao
+    if (App.getUser().hasPrivilege('manageDepartment') || App.isFullControl) {
         navs.push({
             'name': Lang.t("dep.nav.name"), 'icon': 'ti ti-home',
             'module': "companyui/department",

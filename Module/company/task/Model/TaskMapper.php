@@ -2,7 +2,10 @@
 
 namespace Company\Task\Model;
 
+use Company\Auth\Auth;
 use Company\Exception as E;
+use Company\Employee\Model\EmployeeMapper;
+use Company\User\Model\UserMapper;
 
 class TaskMapper extends \Company\SQL\Mapper {
 
@@ -34,56 +37,113 @@ class TaskMapper extends \Company\SQL\Mapper {
         return $this;
     }
 
-    function filterActive($active = 1) {
-        $this->where("tsk.active = ?", __FUNCTION__)
-            ->setParamWhere($active, __FUNCTION__);
-        return $this;
-    }
+    /**
+     * Lấy danh sách task theo phân quyền phòng ban (Bản đầy đủ)
+     */
+    function getTasks($siteID, $actorID, $privileges, $filters) {
+        $privileges = is_array($privileges) ? $privileges : [];
+        $hasManageTask = in_array('manageTask', $privileges);
 
-    function filterDepFK($depFK) {
-        $this->where("tsk.depFK = ?", __FUNCTION__)
-            ->setParamWhere($depFK, __FUNCTION__);
-        return $this;
+        // 1. Lấy thông tin phòng ban người xem
+        $myDepID = '0';
+        try {
+            $me = EmployeeMapper::makeInstance()->filterID($actorID)->getEntity();
+            if (!$me->id) $me = UserMapper::makeInstance()->filterID($actorID)->getEntity();
+            $myDepID = ($me && $me->depFK) ? $me->depFK : '0';
+        } catch (\Exception $e) {}
+
+        // 2. Các tham số lọc
+        $status = (string)arrData($filters, 'status', '');
+        $priority = (string)arrData($filters, 'priority', '');
+        $search = (string)arrData($filters, 'search', '');
+        $page = max(1, (int)arrData($filters, 'page', 1));
+        $pageSize = max(1, min(100, (int)arrData($filters, 'pageSize', 20)));
+
+        // 3. Base Query
+        $select = "SELECT SQL_CALC_FOUND_ROWS t.*, 
+                    (SELECT GROUP_CONCAT(e.fullname SEPARATOR ', ') FROM task_assignee ta2 JOIN employee e ON ta2.assigneeFK = e.id WHERE ta2.taskFK = t.id AND ta2.deleted = 0 AND e.deleted = 0) as assignees,
+                    (SELECT GROUP_CONCAT(e.id) FROM task_assignee ta2 JOIN employee e ON ta2.assigneeFK = e.id WHERE ta2.taskFK = t.id AND ta2.deleted = 0 AND e.deleted = 0) as assigneeIDs";
+        $from = " FROM task t";
+        $where = " WHERE t.siteFK = ? AND t.deleted = 0";
+        $params = [$siteID];
+
+        // 4. Phân quyền truy vấn
+        if ($siteID === 'master') {
+            // Admin tối cao: Thấy tất cả
+        } else if ($hasManageTask) {
+            $where .= " AND t.depFK = ?";
+            $params[] = $myDepID;
+        } else {
+            $from .= " LEFT JOIN task_assignee ta ON t.id = ta.taskFK AND ta.deleted = 0";
+            $where .= " AND t.depFK = ? AND (t.createdBy = ? OR ta.assigneeFK = ?)";
+            $params[] = $myDepID;
+            $params[] = $actorID;
+            $params[] = $actorID;
+        }
+
+        // 5. Áp dụng Filters
+        if ($status !== '') {
+            $where .= " AND t.status = ?";
+            $params[] = $status;
+        }
+        if ($priority !== '') {
+            $where .= " AND t.priority = ?";
+            $params[] = $priority;
+        }
+        if ($search !== '') {
+            $where .= " AND t.title LIKE ?";
+            $params[] = "%$search%";
+        }
+
+        $offset = ($page - 1) * $pageSize;
+        $sql = $select . $from . $where . " GROUP BY t.id ORDER BY t.createdDate DESC LIMIT " . (int)$offset . ", " . (int)$pageSize;
+        $items = $this->db->getRows($sql, $params);
+        
+        if ($items === false) throw new \Exception("Lỗi SQL: " . $this->db->ErrorMsg());
+
+        return result(true, [
+            'total' => (int) $this->db->getFoundRows(),
+            'page' => $page,
+            'pageSize' => $pageSize,
+            'items' => $items
+        ]);
     }
 
     /**
-     * Story 1.1 - tạo task cơ bản + audit log.
+     * Tạo task mới kèm phân quyền phòng ban và log
      */
     function createTask($siteID, $actorID, $input) {
         $title = trim((string) arrData($input, 'title'));
-        $description = trim((string) arrData($input, 'description'));
+        $description = (string) arrData($input, 'description', '');
         $priority = trim((string) arrData($input, 'priority', 'Vừa'));
-        $startTime = trim((string) arrData($input, 'start_time'));
-        $dueTime = trim((string) arrData($input, 'due_time'));
+        $startTime = trim((string) arrData($input, 'start_time', ''));
+        $dueTime = trim((string) arrData($input, 'due_time', ''));
+        $progress = (int) arrData($input, 'progress', 0);
 
-        if ($title === '') {
-            throw new E\BadRequestException('Thiếu trường bắt buộc: title');
-        }
-        if (mb_strlen($title) > 200) {
-            throw new E\BadRequestException('title vượt quá 200 ký tự');
-        }
+        if ($title === '') throw new E\BadRequestException('Tiêu đề không được rỗng');
 
-        $allowedPriority = ['Thấp', 'Vừa', 'Cao'];
-        if (!in_array($priority, $allowedPriority, true)) {
-            throw new E\BadRequestException('priority không hợp lệ');
-        }
+        // 1. Lấy phòng ban của người tạo (Fallback an toàn)
+        $depFK = '0';
+        try {
+            $creator = EmployeeMapper::makeInstance()->filterID($actorID)->getEntity();
+            if (!$creator->id) $creator = UserMapper::makeInstance()->filterID($actorID)->getEntity();
+            $depFK = ($creator && $creator->depFK) ? $creator->depFK : '0';
+        } catch (\Exception $e) {}
 
-        if ($startTime !== '' && $dueTime !== '' && strtotime($startTime) > strtotime($dueTime)) {
-            throw new E\BadRequestException('start_time phải nhỏ hơn hoặc bằng due_time');
-        }
-
-        $id = uniqid();
+        $id = uid();
         $now = \DateTimeEx::create()->toIsoString();
-
-        $taskData = [
+        
+        $data = [
             'id' => $id,
             'siteFK' => $siteID,
+            'depFK' => $depFK,
             'title' => $title,
             'description' => $description,
             'priority' => $priority,
             'startTime' => $startTime,
             'dueTime' => $dueTime,
             'status' => 'Mới',
+            'attrs' => json_encode(['progress' => $progress]),
             'createdBy' => $actorID,
             'createdDate' => $now,
             'updatedDate' => $now,
@@ -91,798 +151,343 @@ class TaskMapper extends \Company\SQL\Mapper {
             'dbVersion' => $this->dbVersion
         ];
 
-        $auditData = [
-            'id' => uniqid(),
+        $this->startTrans();
+        $this->insert($data);
+
+        // 2. Ghi nhật ký (Audit Log)
+        $this->db->insert('task_audit_log', [
+            'id' => uid(),
             'taskFK' => $id,
             'siteFK' => $siteID,
             'action' => 'task.create',
             'actorFK' => $actorID,
-            'beforeData' => null,
-            'afterData' => json_encode($taskData),
+            'afterData' => json_encode($data),
             'createdDate' => $now
-        ];
+        ]);
+
+        $this->completeTransOrFail();
+        $this->syncToElastic($siteID, $id);
+
+        return result(true, ['id' => $id]);
+    }
+
+    /**
+     * Cập nhật thông tin Task kèm nhật ký và tiến độ
+     */
+    function updateTask($siteID, $taskID, $actorID, $hasManageTask, $input) {
+        $task = $this->makeInstance()->filterID($taskID)->filterSiteFK($siteID)->getEntity();
+        if (!$task->id) throw new E\BadRequestException('Công việc không tồn tại');
+
+        $updateData = [];
+        if (isset($input['title'])) $updateData['title'] = trim((string)$input['title']);
+        if (isset($input['description'])) $updateData['description'] = (string)$input['description'];
+        if (isset($input['priority'])) $updateData['priority'] = $input['priority'];
+        
+        // Xử lý tiến độ (%) trong attrs
+        if (isset($input['progress'])) {
+            $progress = (int) $input['progress'];
+            $attrs = [];
+            if (!empty($task->attrs)) {
+                $decoded = json_decode($task->attrs, true);
+                if (is_array($decoded)) $attrs = $decoded;
+            }
+            $attrs['progress'] = $progress;
+            $updateData['attrs'] = json_encode($attrs);
+            
+            // Log tiến độ riêng
+            $this->db->insert('task_progress_log', [
+                'id' => uid(),
+                'taskFK' => $taskID,
+                'siteFK' => $siteID,
+                'actorFK' => $actorID,
+                'progress' => $progress,
+                'note' => 'Cập nhật từ chi tiết',
+                'createdDate' => \DateTimeEx::create()->toIsoString()
+            ]);
+        }
+
+        if (empty($updateData)) return result(true);
+
+        $updateData['updatedDate'] = \DateTimeEx::create()->toIsoString();
 
         $this->startTrans();
-        $this->insert($taskData);
-        $this->db->insert('task_audit_log', $auditData);
+        $this->makeInstance()->filterID($taskID)->update($updateData);
+
+        // Ghi Audit Log
+        $this->db->insert('task_audit_log', [
+            'id' => uid(),
+            'taskFK' => $taskID,
+            'siteFK' => $siteID,
+            'action' => 'task.update',
+            'actorFK' => $actorID,
+            'beforeData' => json_encode(['title' => $task->title, 'priority' => $task->priority]),
+            'afterData' => json_encode($updateData),
+            'createdDate' => $updateData['updatedDate']
+        ]);
+
         $this->completeTransOrFail();
-
-        return result(true, [
-            'id' => $id,
-            'status' => 'Mới',
-            'title' => $title,
-            'priority' => $priority,
-            'start_time' => $startTime,
-            'due_time' => $dueTime
-        ]);
+        $this->syncToElastic($siteID, $taskID);
+        return result(true, ['taskID' => $taskID]);
     }
 
     /**
-     * Story 5.2 - Lấy danh sách task (My Tasks & Pending Approval)
-     */
-    function getTasks($siteID, $actorID, $hasManageTaskPrivilege, $filters) {
-        $view = $filters['view'];
-        $status = $filters['status'];
-        $priority = $filters['priority'];
-        $isOverdue = $filters['isOverdue'];
-        $isDueSoon = $filters['isDueSoon'];
-        $search = arrData($filters, 'search', '');
-        $page = $filters['page'];
-        $pageSize = $filters['pageSize'];
-        $sortBy = $filters['sortBy'];
-        $sortOrder = $filters['sortOrder'];
-
-        // Base Query
-        $select = "SELECT SQL_CALC_FOUND_ROWS t.*, 
-                    (SELECT e.fullname FROM task_assignee ta2 JOIN employee e ON ta2.assigneeFK = e.id WHERE ta2.taskFK = t.id AND ta2.deleted = 0 AND e.deleted = 0 LIMIT 1) as assignee,
-                    (SELECT e.id FROM task_assignee ta2 JOIN employee e ON ta2.assigneeFK = e.id WHERE ta2.taskFK = t.id AND ta2.deleted = 0 AND e.deleted = 0 LIMIT 1) as assigneeID";
-        $from = " FROM task t";
-        $where = " WHERE t.siteFK = ? AND t.deleted = 0";
-        $params = [$siteID];
-
-        // Phân luồng View
-        if ($view === 'pending_approval') {
-            if (!$hasManageTaskPrivilege) {
-                throw new E\ForbiddenException('Chỉ Manager mới được xem hàng chờ duyệt toàn phòng ban');
-            }
-            $where .= " AND t.status = 'Chờ duyệt'";
-        } else {
-            // view = my_tasks
-            // Nếu là Manager/Admin thì không lọc theo assignee cá nhân, hiển thị toàn bộ
-            if (!$hasManageTaskPrivilege) {
-                $from .= " JOIN task_assignee ta ON t.id = ta.taskFK";
-                $where .= " AND ta.assigneeFK = ? AND ta.deleted = 0";
-                $params[] = $actorID;
-            }
-        }
-
-        // Filters
-        if ($status !== '') {
-            $where .= " AND t.status = ?";
-            $params[] = $status;
-        }
-
-        if ($priority !== '') {
-            $where .= " AND t.priority = ?";
-            $params[] = $priority;
-        }
-
-        if ($search !== '') {
-            $where .= " AND t.title LIKE ?";
-            $params[] = "%$search%";
-        }
-
-        $nowStr = \DateTimeEx::create()->toIsoString();
-        $soonStr = \DateTimeEx::create()->addHour(24)->toIsoString();
-
-        if ($isOverdue) {
-            $where .= " AND t.status != 'Hoàn thành' AND t.dueTime < ?";
-            $params[] = $nowStr;
-        } else if ($isDueSoon) {
-            $where .= " AND t.status != 'Hoàn thành' AND t.dueTime >= ? AND t.dueTime <= ?";
-            $params[] = $nowStr;
-            $params[] = $soonStr;
-        }
-
-        // Sorting
-        $allowedSortColumns = ['createdDate', 'dueTime', 'priority'];
-        $sortColumn = in_array($sortBy, $allowedSortColumns) ? $sortBy : 'createdDate';
-        $orderBy = " ORDER BY t.{$sortColumn} {$sortOrder}";
-
-        // Paging
-        $offset = ($page - 1) * $pageSize;
-        $limit = " LIMIT " . (int)$offset . ", " . (int)$pageSize;
-
-        $sql = $select . $from . $where . $orderBy . $limit;
-
-        // Cần đảm bảo getRows support mảng tham số chuẩn (đặc biệt là integer)
-        // Nếu DB wrapper của công ty tự handle thì tốt, nếu không thì dùng PDO bindValue
-        // Ở đây giả sử $this->db->getRows handle được.
-        $items = $this->db->getRows($sql, $params);
-        if ($items === false) {
-            $items = [];
-        }
-        $total = (int) $this->db->getFoundRows();
-
-        return result(true, [
-            'total' => $total,
-            'page' => $page,
-            'pageSize' => $pageSize,
-            'items' => $items
-        ]);
-    }
-
-    /**
-     * Story 5.1 - Thống kê Dashboard
+     * Story 5.1 - Thống kê Dashboard theo phòng ban
      */
     function getDashboardAggregates($siteID, $actorID, $hasManageTaskPrivilege) {
         $nowStr = \DateTimeEx::create()->toIsoString();
         $soonStr = \DateTimeEx::create()->addHour(24)->toIsoString();
 
-        // 1. Lấy thông số Todo, HighPriority, Overdue, DueSoon cho cá nhân
-        // Lưu ý: Chỉ tính các task mà actorID được assign.
-        $sql = "
-            SELECT 
+        $me = EmployeeMapper::makeInstance()->filterID($actorID)->getEntity();
+        if (!$me->id) $me = UserMapper::makeInstance()->filterID($actorID)->getEntity();
+        $myDepID = $me->depFK ?: '0';
+
+        // Base Filter: Nếu là Manager thì xem cả phòng ban, nếu không chỉ xem cá nhân
+        $where = " WHERE t.siteFK = ? AND t.deleted = 0";
+        $params = [$siteID];
+        if (!$hasManageTaskPrivilege) {
+            $where .= " AND ta.assigneeFK = ?";
+            $params[] = $actorID;
+        } else {
+            $where .= " AND t.depFK = ?";
+            $params[] = $myDepID;
+        }
+
+        $sql = "SELECT 
                 SUM(IF(t.status IN ('Mới', 'Đang thực hiện'), 1, 0)) as totalTodo,
                 SUM(IF(t.status != 'Hoàn thành' AND t.priority = 'Cao', 1, 0)) as totalHighPriority,
-                SUM(IF(t.status != 'Hoàn thành' AND t.dueTime < ?, 1, 0)) as totalOverdue,
-                SUM(IF(t.status != 'Hoàn thành' AND t.dueTime >= ? AND t.dueTime <= ?, 1, 0)) as totalDueSoon
-            FROM task t
-            JOIN task_assignee ta ON t.id = ta.taskFK
-            WHERE t.siteFK = ? AND ta.assigneeFK = ? AND t.deleted = 0 AND ta.deleted = 0
-        ";
-        $aggregates = $this->db->getRow($sql, [$nowStr, $nowStr, $soonStr, $siteID, $actorID]);
-
-
-        // 2. Lấy bộ đếm gom nhóm theo Status
-        $sqlByStatus = "
-            SELECT t.status, COUNT(t.id) as total
-            FROM task t
-            JOIN task_assignee ta ON t.id = ta.taskFK
-            WHERE t.siteFK = ? AND ta.assigneeFK = ? AND t.deleted = 0 AND ta.deleted = 0
-            GROUP BY t.status
-        ";
-        $statusCounts = $this->db->getAssoc($sqlByStatus, [$siteID, $actorID]);
-
-        // 3. Lấy bộ đếm gom nhóm theo Priority
-        $sqlByPriority = "
-            SELECT t.priority, COUNT(t.id) as total
-            FROM task t
-            JOIN task_assignee ta ON t.id = ta.taskFK
-            WHERE t.siteFK = ? AND ta.assigneeFK = ? AND t.deleted = 0 AND ta.deleted = 0
-            GROUP BY t.priority
-        ";
-        $priorityCounts = $this->db->getAssoc($sqlByPriority, [$siteID, $actorID]);
-
-        // 4. Nếu là Manager thì tính thêm pendingApproval toàn site
-        $pendingApproval = 0;
-        if ($hasManageTaskPrivilege) {
-            $sqlPending = "SELECT COUNT(id) as total FROM task WHERE siteFK = ? AND status = 'Chờ duyệt' AND deleted = 0";
-            $rowPending = $this->db->getRow($sqlPending, [$siteID]);
-            $pendingApproval = (int) arrData($rowPending, 'total', 0);
-        }
+                SUM(IF(t.status != 'Hoàn thành' AND t.dueTime < '{$nowStr}', 1, 0)) as totalOverdue,
+                SUM(IF(t.status != 'Hoàn thành' AND t.dueTime >= '{$nowStr}' AND t.dueTime <= '{$soonStr}', 1, 0)) as totalDueSoon
+            FROM task t 
+            LEFT JOIN task_assignee ta ON t.id = ta.taskFK AND ta.deleted = 0
+            $where";
+        
+        $aggregates = $this->db->getRow($sql, $params);
 
         return result(true, [
             'todo' => (int) arrData($aggregates, 'totalTodo', 0),
             'highPriority' => (int) arrData($aggregates, 'totalHighPriority', 0),
             'dueSoon' => (int) arrData($aggregates, 'totalDueSoon', 0),
-            'overdue' => (int) arrData($aggregates, 'totalOverdue', 0),
-            'pendingApproval' => $pendingApproval,
-            'byStatus' => $statusCounts,
-            'byPriority' => $priorityCounts
+            'overdue' => (int) arrData($aggregates, 'totalOverdue', 0)
         ]);
     }
 
     /**
-     * Story 1.2 - Giao task cho cá nhân
+     * Story 1.5 - Xóa task kèm ràng buộc
      */
-    function assignIndividual($siteID, $taskID, $assigneeID, $actorID) {
-        // Validate Task
-        $task = $this->makeInstance()
-            ->filterID($taskID)
-            ->filterSiteFK($siteID)
-            ->filterDeleted(0)
-            ->getEntity();
+    function deleteTask($siteID, $taskID, $actorID, $privileges, $reason) {
+        $task = $this->makeInstance()->filterID($taskID)->filterSiteFK($siteID)->getEntity();
+        if (!$task->id) throw new E\BadRequestException('Công việc không tồn tại');
 
-        if (!$task->id) {
-            throw new E\BadRequestException('Task không tồn tại');
-        }
+        $hasManageTask = is_array($privileges) && in_array('manageTask', $privileges);
 
-        // Validate Assignee (Employee)
-        $employee = \Company\Employee\Model\EmployeeMapper::makeInstance()
-            ->filterID($assigneeID)
-            ->filterSiteFK($siteID)
-            ->filterActive(1)
-            ->filterDeleted(0)
-            ->getEntity();
-
-        if (!$employee->id) {
-            throw new E\BadRequestException('Nhân sự không tồn tại hoặc đã nghỉ việc');
-        }
-
-        $now = \DateTimeEx::create()->toIsoString();
-
-        $this->startTrans();
-
-        // Xóa assignee cũ nếu có (bởi vì đây là assign đơn - 1 người)
-        // Lưu ý: Nếu hệ thống hỗ trợ nhiều assignee thì chỉ cần check tồn tại, nhưng yêu cầu là "assignee đơn"
-        // Nên sẽ xóa toàn bộ assign cũ của task này, sau đó insert mới.
-        $this->db->delete('task_assignee', "taskFK = ? AND siteFK = ?", [$taskID, $siteID]);
-
-        // Insert assignee mới
-        $assigneeData = [
-            'id' => uniqid(),
-            'taskFK' => $taskID,
-            'assigneeFK' => $assigneeID,
-            'siteFK' => $siteID,
-            'createdDate' => $now,
-            'deleted' => 0
-        ];
-        $this->db->insert('task_assignee', $assigneeData);
-
-        // Audit log
-        $auditData = [
-            'id' => uniqid(),
-            'taskFK' => $taskID,
-            'siteFK' => $siteID,
-            'action' => 'task.assign.individual',
-            'actorFK' => $actorID,
-            'beforeData' => null,
-            'afterData' => json_encode(['assigneeFK' => $assigneeID]),
-            'createdDate' => $now
-        ];
-        $this->db->insert('task_audit_log', $auditData);
-
-        $this->completeTransOrFail();
-
-        return result(true, [
-            'taskID' => $taskID,
-            'assigneeID' => $assigneeID
-        ]);
-    }
-
-    /**
-     * Story 1.3 - Giao task cho phòng ban (snapshot thành viên)
-     */
-    function assignDepartment($siteID, $taskID, $departmentID, $actorID) {
-        // Validate Task
-        $task = $this->makeInstance()
-            ->filterID($taskID)
-            ->filterSiteFK($siteID)
-            ->filterDeleted(0)
-            ->getEntity();
-
-        if (!$task->id) {
-            throw new E\BadRequestException('Task không tồn tại');
-        }
-
-        // Query active members of the department
-        $employees = \Company\Employee\Model\EmployeeMapper::makeInstance()
-            ->filterDepFK($departmentID)
-            ->filterSiteFK($siteID)
-            ->filterActive(1)
-            ->filterDeleted(0)
-            ->getArray();
-
-        if (empty($employees)) {
-            throw new E\BadRequestException('Không có thành viên hợp lệ nào trong phòng ban này');
-        }
-
-        $now = \DateTimeEx::create()->toIsoString();
-        $assigneeIDs = [];
-
-        $this->startTrans();
-
-        // Xóa assignee cũ của task (do được giao mới theo department)
-        $this->db->delete('task_assignee', "taskFK = ? AND siteFK = ?", [$taskID, $siteID]);
-
-        // Insert snapshot assignees
-        foreach ($employees as $emp) {
-            $assigneeData = [
-                'id' => uniqid(),
-                'taskFK' => $taskID,
-                'assigneeFK' => $emp['id'],
-                'siteFK' => $siteID,
-                'createdDate' => $now,
-                'deleted' => 0
-            ];
-            $this->db->insert('task_assignee', $assigneeData);
-            $assigneeIDs[] = $emp['id'];
-        }
-
-        // Audit log
-        $auditData = [
-            'id' => uniqid(),
-            'taskFK' => $taskID,
-            'siteFK' => $siteID,
-            'action' => 'task.assign.department',
-            'actorFK' => $actorID,
-            'beforeData' => null,
-            'afterData' => json_encode([
-                'departmentID' => $departmentID,
-                'assigneeIDs' => $assigneeIDs
-            ]),
-            'createdDate' => $now
-        ];
-        $this->db->insert('task_audit_log', $auditData);
-
-        $this->completeTransOrFail();
-
-        return result(true, [
-            'taskID' => $taskID,
-            'departmentID' => $departmentID,
-            'assigneeCount' => count($assigneeIDs)
-        ]);
-    }
-
-    /**
-     * Story 1.4 - Đính kèm tệp cho task
-     */
-    function addAttachments($siteID, $taskID, $actorID, $hasManageTaskPrivilege, $attachments) {
-        // Validate Task
-        $task = $this->makeInstance()
-            ->filterID($taskID)
-            ->filterSiteFK($siteID)
-            ->filterDeleted(0)
-            ->getEntity();
-
-        if (!$task->id) {
-            throw new E\BadRequestException('Task không tồn tại');
-        }
-
-        if ($task->status === 'Hoàn thành') {
-            throw new E\ConflictException('Không thể đính kèm tệp vào task đã Hoàn thành (quy tắc khóa dữ liệu)');
-        }
-
-        // Validate Access: 
-        // 1. User is creator
-        // 2. User has manageTask privilege
-        // 3. User is an assignee
-        $hasAccess = false;
-        if ($task->createdBy == $actorID || $hasManageTaskPrivilege) {
-            $hasAccess = true;
-        } else {
-            // Check if actor is an assignee
-            $isAssignee = $this->db->getRow("SELECT id FROM task_assignee WHERE taskFK = ? AND assigneeFK = ? AND siteFK = ? AND deleted = 0 LIMIT 1", [$taskID, $actorID, $siteID]);
-            if ($isAssignee) {
-                $hasAccess = true;
-            }
-        }
-
-        if (!$hasAccess) {
-            throw new E\ForbiddenException('Bạn không có quyền đính kèm tệp vào task này');
-        }
-
-        // Calculate total size and validate limit (50MB)
-        $totalSize = 0;
-        $maxSize = 50 * 1024 * 1024; // 50MB
-        foreach ($attachments as $att) {
-            if (isset($att['b64'])) {
-                $totalSize += strlen($att['b64']);
-            }
-        }
-
-        if ($totalSize > $maxSize) {
-            throw new E\BadRequestException('Tổng dung lượng các tệp vượt quá giới hạn 50MB');
-        }
-
-        $now = \DateTimeEx::create()->toIsoString();
-        $savedAttachments = [];
-
-        $this->startTrans();
-
-        foreach ($attachments as $att) {
-            $b64 = arrData($att, 'b64', '');
-            $name = arrData($att, 'name', 'unknown');
-            $mime = arrData($att, 'mime', 'application/octet-stream');
-
-            if ($b64 === '') continue;
-
-            // 1. Insert directly into system_file
-            $fileID = uniqid();
-            $fileData = [
-                'id' => $fileID,
-                'createdDate' => $now,
-                'siteID' => $siteID,
-                'context' => 'task_attachment',
-                'mime' => $mime,
-                'name' => $name,
-                'b64' => $b64,
-                'b64Size' => strlen($b64)
-            ];
-            $this->db->insert('system_file', $fileData);
-
-            // 2. Insert metadata into task_attachment
-            $taskAttachmentID = uniqid();
-            $taskAttachmentData = [
-                'id' => $taskAttachmentID,
-                'taskFK' => $taskID,
-                'fileFK' => $fileID,
-                'siteFK' => $siteID,
-                'createdDate' => $now,
-                'deleted' => 0
-            ];
-            $this->db->insert('task_attachment', $taskAttachmentData);
-
-            $savedAttachments[] = [
-                'id' => $taskAttachmentID,
-                'fileID' => $fileID,
-                'name' => $name,
-                'size' => $fileData['b64Size']
-            ];
-        }
-
-        // 3. Audit log
-        if (!empty($savedAttachments)) {
-            $auditData = [
-                'id' => uniqid(),
-                'taskFK' => $taskID,
-                'siteFK' => $siteID,
-                'action' => 'task.attachment.add',
-                'actorFK' => $actorID,
-                'beforeData' => null,
-                'afterData' => json_encode(['attachments' => $savedAttachments]),
-                'createdDate' => $now
-            ];
-            $this->db->insert('task_audit_log', $auditData);
-        }
-
-        $this->completeTransOrFail();
-
-        return result(true, [
-            'taskID' => $taskID,
-            'attachments' => $savedAttachments
-        ]);
-    }
-
-    /**
-     * Story 1.5 - Xóa task (soft delete)
-     */
-    function deleteTask($siteID, $taskID, $actorID, $hasManageTaskPrivilege, $reason) {
-        $task = $this->makeInstance()
-            ->filterID($taskID)
-            ->filterSiteFK($siteID)
-            ->filterDeleted(0)
-            ->getEntity();
-
-        if (!$task->id) {
-            throw new E\BadRequestException('Task không tồn tại hoặc đã bị xóa');
-        }
-
-        // Rule Matrix Validation
-        if (!$hasManageTaskPrivilege) {
-            // Staff logic
+        // KIỂM TRA RÀNG BUỘC XÓA
+        if (!$hasManageTask) {
             if ($task->createdBy != $actorID) {
-                throw new E\ForbiddenException('Bạn không có quyền xóa task của người khác');
+                throw new E\ForbiddenException('Bạn không có quyền xóa công việc của người khác');
             }
-            if ($task->status !== 'Mới') {
-                // If it's already in progress or completed, staff cannot delete
-                throw new E\ConflictException('Không thể xóa task đã phát sinh xử lý (trạng thái khác Mới)');
+            // Nhân viên không được xóa task do Manager tạo
+            $sqlPrivs = "SELECT privilegeID FROM user_user_privilege WHERE userID=?
+                         UNION
+                         SELECT privilegeID FROM user_role_privilege WHERE roleID IN (SELECT roleID FROM user_role_user WHERE userID=?)";
+            $creatorPrivs = $this->db->getCol($sqlPrivs, [$task->createdBy, $task->createdBy]);
+            if (in_array('manageTask', $creatorPrivs)) {
+                throw new E\ForbiddenException('Không được phép xóa công việc do Quản lý tạo');
             }
-        } else {
-            // Manager logic
-            // Managers can soft delete regardless of state, but we log the action and reason.
-            // Requirement: "Manager không xóa cứng task đã phát sinh xử lý. Admin chỉ xóa theo policy (ưu tiên soft delete)"
-            // -> All deletes are soft deletes.
         }
 
         $now = \DateTimeEx::create()->toIsoString();
-
         $this->startTrans();
+        $this->makeInstance()->filterID($taskID)->update(['deleted' => 1, 'updatedDate' => $now]);
 
-        // Perform Soft Delete
-        $this->makeInstance()
-            ->filterID($taskID)
-            ->update([
-                'deleted' => 1,
-                'updatedDate' => $now
-            ]);
-
-        // Ghi Audit log
-        $auditData = [
-            'id' => uniqid(),
+        // Audit Log
+        $this->db->insert('task_audit_log', [
+            'id' => uid(),
             'taskFK' => $taskID,
             'siteFK' => $siteID,
             'action' => 'task.delete',
             'actorFK' => $actorID,
-            'beforeData' => json_encode([
-                'status' => $task->status,
-                'priority' => $task->priority,
-                'title' => $task->title
-            ]),
-            'afterData' => json_encode([
-                'deleted' => 1,
-                'reason' => $reason
-            ]),
+            'afterData' => json_encode(['reason' => $reason]),
             'createdDate' => $now
-        ];
-        $this->db->insert('task_audit_log', $auditData);
+        ]);
 
         $this->completeTransOrFail();
-
-        return result(true, ['taskID' => $taskID]);
+        $this->syncToElastic($siteID, $taskID);
+        return result(true);
     }
 
     /**
-     * Story 2.1 - Cập nhật deadline task
+     * Story 1.4 - Đính kèm tệp
      */
-    function updateDeadline($siteID, $taskID, $actorID, $inputStartTime, $inputDueTime) {
-        $task = $this->makeInstance()
-            ->filterID($taskID)
-            ->filterSiteFK($siteID)
-            ->filterDeleted(0)
-            ->getEntity();
+    function addAttachments($siteID, $taskID, $actorID, $hasManageTask, $attachments) {
+        $now = \DateTimeEx::create()->toIsoString();
+        $this->startTrans();
+        foreach ($attachments as $fileID) {
+            $this->db->insert('task_attachment', [
+                'id' => uid(),
+                'taskFK' => $taskID,
+                'fileFK' => $fileID,
+                'siteFK' => $siteID,
+                'createdDate' => $now
+            ]);
+        }
+        $this->completeTransOrFail();
+        return result(true);
+    }
 
-        if (!$task->id) {
-            throw new E\BadRequestException('Task không tồn tại hoặc đã bị xóa');
+    /**
+     * Giao việc cho nhân sự (Hỗ trợ nhiều người - Jira style)
+     */
+    function assignIndividual($siteID, $taskID, $assigneeIDs, $actorID, $privileges = null) {
+        if (!is_array($assigneeIDs)) {
+            $assigneeIDs = explode(',', (string)$assigneeIDs);
+        }
+        $assigneeIDs = array_filter(array_map('trim', $assigneeIDs));
+
+        // 1. Kiểm tra Task
+        $task = $this->makeInstance()->filterID($taskID)->filterSiteFK($siteID)->getEntity();
+        if (!$task->id) throw new E\BadRequestException('Công việc không tồn tại');
+
+        // 2. KIỂM TRA QUYỀN TRỰC TIẾP
+        $auth = Auth::getInstance();
+        $auth->setSiteID($siteID);
+        $hasManageTask = $auth->hasPrivilege('manageTask');
+        $isFullControl = $auth->hasPrivilege('fullcontrol');
+        
+        $canAssign = false;
+        if ($isFullControl) {
+            $canAssign = true;
+        } else if ($hasManageTask) {
+            // Trưởng phòng được giao trong phòng ban mình
+            $me = EmployeeMapper::makeInstance()->filterID($actorID)->getEntity();
+            if (!$me->id) $me = UserMapper::makeInstance()->filterID($actorID)->getEntity();
+            
+            $myDepFK = $me->depFK ?: '0';
+            $taskDepFK = $task->depFK ?: '0';
+            if ($taskDepFK === $myDepFK || $taskDepFK === '0') {
+                $canAssign = true;
+            }
+        } else if ($task->createdBy == $actorID) {
+            $canAssign = true; // Người tạo luôn được phép
         }
 
+        if (!$canAssign) {
+            throw new E\ForbiddenException('Bạn không có quyền giao việc cho công việc này');
+        }
+
+        $now = \DateTimeEx::create()->toIsoString();
+        $this->startTrans();
+
+        // 3. Xóa cũ, thêm mới
+        $this->db->delete('task_assignee', "taskFK = ? AND siteFK = ?", [$taskID, $siteID]);
+        foreach ($assigneeIDs as $eid) {
+            if (empty($eid)) continue;
+            $this->db->insert('task_assignee', [
+                'id' => uid(),
+                'taskFK' => $taskID,
+                'assigneeFK' => $eid,
+                'siteFK' => $siteID,
+                'createdDate' => $now,
+                'deleted' => 0
+            ]);
+        }
+
+        // 4. Audit Log
+        $this->db->insert('task_audit_log', [
+            'id' => uid(),
+            'taskFK' => $taskID,
+            'siteFK' => $siteID,
+            'action' => 'task.assign.multi',
+            'actorFK' => $actorID,
+            'afterData' => json_encode(['assignees' => $assigneeIDs]),
+            'createdDate' => $now
+        ]);
+
+        $this->completeTransOrFail();
+        $this->syncToElastic($siteID, $taskID);
+        return result(true);
+    }
+
+    /**
+     * Cập nhật hạn chót
+     */
+    function updateDeadline($siteID, $taskID, $actorID, $startTime, $dueTime, $privs = null) {
+        $this->makeInstance()->filterID($taskID)->update([
+            'startTime' => $startTime,
+            'dueTime' => $dueTime,
+            'updatedDate' => \DateTimeEx::create()->toIsoString()
+        ]);
+        $this->syncToElastic($siteID, $taskID);
+        return result(true);
+    }
+
+    /**
+     * Chuyển trạng thái an toàn kèm kiểm tra quyền
+     */
+    private function moveStatus($siteID, $taskID, $actorID, $hasManageTask, $newStatus, $note) {
+        $task = $this->makeInstance()->filterID($taskID)->filterSiteFK($siteID)->getEntity();
+        if (!$task->id) throw new E\BadRequestException('Công việc không tồn tại');
+
+        // KIỂM TRÀ QUYỀN
+        // 1. Kéo vào Hoàn thành: Cần manageTask
+        if ($newStatus === 'Hoàn thành') {
+            if (!$hasManageTask) {
+                throw new E\ForbiddenException('Chỉ người có quyền Quản lý công việc mới được phép Duyệt (Hoàn thành) công việc');
+            }
+        }
+        
+        // 2. Kéo ra khỏi Hoàn thành: Cần manageTask
         if ($task->status === 'Hoàn thành') {
-            throw new E\ConflictException('Không thể đổi deadline của task đã Hoàn thành');
+            if (!$hasManageTask) {
+                throw new E\ForbiddenException('Chỉ người có quyền Quản lý công việc mới được phép kéo công việc ra khỏi trạng thái Hoàn thành');
+            }
         }
 
-        $newStartTime = $inputStartTime !== '' ? $inputStartTime : $task->startTime;
-        $newDueTime = $inputDueTime;
-
-        if ($newStartTime !== '' && $newDueTime !== '' && strtotime($newStartTime) > strtotime($newDueTime)) {
-            throw new E\BadRequestException('start_time phải nhỏ hơn hoặc bằng due_time');
+        // 3. Các trạng thái khác: Cho phép Người tạo hoặc Admin
+        if (!$hasManageTask && $task->createdBy != $actorID) {
+            throw new E\ForbiddenException('Bạn không có quyền thay đổi trạng thái của công việc này');
         }
 
-        $nowStr = \DateTimeEx::create()->toIsoString();
-        $nowTimestamp = time();
-        $dueTimestamp = strtotime($newDueTime);
+        $guard = TaskWorkflowGuard::makeInstance();
+        return $guard->executeTransition($siteID, $taskID, $actorID, $newStatus, $note);
+    }
 
-        $isOverdue = false;
-        $isDueSoon = false;
+    // Khôi phục các hàm gọi luồng trạng thái chuẩn
+    function approveTask($s, $tid, $a, $p, $n) { return $this->moveStatus($s, $tid, $a, $p, 'Hoàn thành', $n); }
+    function startTask($s, $tid, $a, $p, $n) { return $this->moveStatus($s, $tid, $a, $p, 'Đang thực hiện', $n); }
+    function submitTask($s, $tid, $a, $p, $n) { return $this->moveStatus($s, $tid, $a, $p, 'Chờ duyệt', $n); }
+    function reworkTask($s, $tid, $a, $p, $n) { return $this->moveStatus($s, $tid, $a, $p, 'Đang thực hiện', $n); }
+    function resetTask($s, $tid, $a, $p, $n) { return $this->moveStatus($s, $tid, $a, $p, 'Mới', $n); }
 
-        if ($dueTimestamp) {
-            if ($nowTimestamp > $dueTimestamp) {
-                $isOverdue = true;
+    /**
+     * Đồng bộ Task sang Elasticsearch
+     */
+    function syncToElastic($siteID, $taskID) {
+        $sql = "SELECT t.*, 
+                    (SELECT GROUP_CONCAT(e.fullname SEPARATOR ', ') FROM task_assignee ta2 JOIN employee e ON ta2.assigneeFK = e.id WHERE ta2.taskFK = t.id AND ta2.deleted = 0 AND e.deleted = 0) as assignees,
+                    (SELECT GROUP_CONCAT(e.id) FROM task_assignee ta2 JOIN employee e ON ta2.assigneeFK = e.id WHERE ta2.taskFK = t.id AND ta2.deleted = 0 AND e.deleted = 0) as assigneeIDs
+                FROM task t
+                WHERE t.id = ? AND t.siteFK = ?";
+        $task = $this->db->getRow($sql, [$taskID, $siteID]);
+        if ($task) {
+            if (!empty($task['assigneeIDs'])) {
+                $task['assigneeIDs'] = explode(',', $task['assigneeIDs']);
             } else {
-                // Hardcode mốc dueSoon là 24 giờ
-                $diffHours = ($dueTimestamp - $nowTimestamp) / 3600;
-                if ($diffHours <= 24) {
-                    $isDueSoon = true;
+                $task['assigneeIDs'] = [];
+            }
+            if (!empty($task['attrs'])) {
+                $decoded = json_decode($task['attrs'], true);
+                if (is_array($decoded)) {
+                    $task['attrs'] = $decoded;
                 }
             }
+            $elasticMsg = TaskElasticMapper::makeInstance()->buildElasticMessage(
+                TaskElasticMapper::METHOD_UPDATE,
+                $task,
+                $taskID,
+                null,
+                ['updatedDate']
+            );
+            TaskElasticMapper::makeInstance()->addQueue($elasticMsg);
         }
-
-        $this->startTrans();
-
-        $this->makeInstance()
-            ->filterID($taskID)
-            ->update([
-                'startTime' => $newStartTime,
-                'dueTime' => $newDueTime,
-                'updatedDate' => $nowStr
-            ]);
-
-        $auditData = [
-            'id' => uniqid(),
-            'taskFK' => $taskID,
-            'siteFK' => $siteID,
-            'action' => 'task.update_deadline',
-            'actorFK' => $actorID,
-            'beforeData' => json_encode([
-                'startTime' => $task->startTime,
-                'dueTime' => $task->dueTime
-            ]),
-            'afterData' => json_encode([
-                'startTime' => $newStartTime,
-                'dueTime' => $newDueTime
-            ]),
-            'createdDate' => $nowStr
-        ];
-        $this->db->insert('task_audit_log', $auditData);
-
-        $this->completeTransOrFail();
-
-        return result(true, [
-            'taskID' => $taskID,
-            'startTime' => $newStartTime,
-            'dueTime' => $newDueTime,
-            'isOverdue' => $isOverdue,
-            'isDueSoon' => $isDueSoon
-        ]);
-    }
-
-    /**
-     * Story 3.1 - Cập nhật tiến độ task
-     */
-    function updateProgress($siteID, $taskID, $actorID, $progress, $note) {
-        $task = $this->makeInstance()
-            ->filterID($taskID)
-            ->filterSiteFK($siteID)
-            ->filterDeleted(0)
-            ->getEntity();
-
-        if (!$task->id) {
-            throw new E\BadRequestException('Task không tồn tại hoặc đã bị xóa');
-        }
-
-        if ($task->status === 'Hoàn thành') {
-            throw new E\ConflictException('Không thể cập nhật tiến độ của task đã Hoàn thành');
-        }
-
-        if ($progress < 0 || $progress > 100) {
-            throw new E\BadRequestException('Giá trị progress phải nằm trong khoảng từ 0 đến 100');
-        }
-
-        // Validate Access: Chỉ assignee hợp lệ mới update progress
-        $isAssignee = $this->db->getRow("SELECT id FROM task_assignee WHERE taskFK = ? AND assigneeFK = ? AND siteFK = ? AND deleted = 0 LIMIT 1", [$taskID, $actorID, $siteID]);
-        if (!$isAssignee) {
-            throw new E\ForbiddenException('Chỉ người được giao việc (assignee) mới có quyền cập nhật tiến độ');
-        }
-
-        $nowStr = \DateTimeEx::create()->toIsoString();
-
-        // Xử lý attrs JSON để lưu progress
-        $attrs = [];
-        if (!empty($task->attrs)) {
-            $decoded = json_decode($task->attrs, true);
-            if (is_array($decoded)) {
-                $attrs = $decoded;
-            }
-        }
-        $oldProgress = isset($attrs['progress']) ? (int) $attrs['progress'] : 0;
-        $attrs['progress'] = $progress;
-
-        $this->startTrans();
-
-        // 1. Lưu log vào bảng task_progress_log
-        $logID = uniqid();
-        $this->db->insert('task_progress_log', [
-            'id' => $logID,
-            'taskFK' => $taskID,
-            'siteFK' => $siteID,
-            'actorFK' => $actorID,
-            'progress' => $progress,
-            'note' => $note,
-            'createdDate' => $nowStr
-        ]);
-
-        // 2. Cập nhật attrs chứa progress mới nhất vào task
-        $this->makeInstance()
-            ->filterID($taskID)
-            ->update([
-                'attrs' => json_encode($attrs),
-                'updatedDate' => $nowStr
-            ]);
-
-        // 3. Ghi Audit Log
-        $auditData = [
-            'id' => uniqid(),
-            'taskFK' => $taskID,
-            'siteFK' => $siteID,
-            'action' => 'task.progress.update',
-            'actorFK' => $actorID,
-            'beforeData' => json_encode([
-                'progress' => $oldProgress
-            ]),
-            'afterData' => json_encode([
-                'progress' => $progress,
-                'note' => $note,
-                'logID' => $logID
-            ]),
-            'createdDate' => $nowStr
-        ];
-        $this->db->insert('task_audit_log', $auditData);
-
-        $this->completeTransOrFail();
-
-        return result(true, [
-            'taskID' => $taskID,
-            'progress' => $progress,
-            'logID' => $logID
-        ]);
-    }
-
-    /**
-     * Story 3.2 - Truy vấn lịch sử cập nhật tiến độ (Pagination)
-     */
-    function getProgressHistory($siteID, $taskID, $actorID, $hasManageTaskPrivilege, $page, $pageSize) {
-        $task = $this->makeInstance()
-            ->filterID($taskID)
-            ->filterSiteFK($siteID)
-            ->filterDeleted(0)
-            ->getEntity();
-
-        if (!$task->id) {
-            throw new E\BadRequestException('Task không tồn tại hoặc đã bị xóa');
-        }
-
-        // Validate Access: 1. ManageTask Privilege, 2. Creator, 3. Assignee
-        $hasAccess = false;
-        if ($hasManageTaskPrivilege || $task->createdBy == $actorID) {
-            $hasAccess = true;
-        } else {
-            $isAssignee = $this->db->getRow("SELECT id FROM task_assignee WHERE taskFK = ? AND assigneeFK = ? AND siteFK = ? AND deleted = 0 LIMIT 1", [$taskID, $actorID, $siteID]);
-            if ($isAssignee) {
-                $hasAccess = true;
-            }
-        }
-
-        if (!$hasAccess) {
-            throw new E\ForbiddenException('Bạn không có quyền xem lịch sử tiến độ của task này');
-        }
-
-        $offset = ($page - 1) * $pageSize;
-
-        // Pagination query
-        $sql = "SELECT SQL_CALC_FOUND_ROWS id, actorFK, progress, note, createdDate 
-                FROM task_progress_log 
-                WHERE taskFK = ? AND siteFK = ? 
-                ORDER BY createdDate DESC 
-                LIMIT " . (int)$offset . ", " . (int)$pageSize;
-        
-        $items = $this->db->getRows($sql, [$taskID, $siteID]);
-        
-        // Lấy tổng số bản ghi
-        $totalRow = $this->db->getRow("SELECT FOUND_ROWS() AS total");
-        $total = $totalRow ? (int)$totalRow['total'] : 0;
-
-        return result(true, [
-            'taskID' => $taskID,
-            'total' => $total,
-            'page' => $page,
-            'pageSize' => $pageSize,
-            'items' => $items
-        ]);
-    }
-
-    /**
-     * Story 4.2 - Staff bắt đầu làm task
-     */
-    function startTask($siteID, $taskID, $actorID, $note) {
-        // Validate Access: Chỉ assignee mới được bắt đầu
-        $isAssignee = $this->db->getRow("SELECT id FROM task_assignee WHERE taskFK = ? AND assigneeFK = ? AND siteFK = ? AND deleted = 0 LIMIT 1", [$taskID, $actorID, $siteID]);
-        if (!$isAssignee) {
-            throw new E\ForbiddenException('Chỉ người được giao việc (assignee) mới có quyền bắt đầu task này');
-        }
-
-        // Chuyển trạng thái qua Guard
-        $guard = TaskWorkflowGuard::makeInstance();
-        return $guard->executeTransition($siteID, $taskID, $actorID, 'Đang thực hiện', $note);
-    }
-
-    /**
-     * Story 4.3 - Staff gửi duyệt kết quả
-     */
-    function submitTask($siteID, $taskID, $actorID, $note) {
-        // Validate Access: Chỉ assignee mới được nộp bài
-        $isAssignee = $this->db->getRow("SELECT id FROM task_assignee WHERE taskFK = ? AND assigneeFK = ? AND siteFK = ? AND deleted = 0 LIMIT 1", [$taskID, $actorID, $siteID]);
-        if (!$isAssignee) {
-            throw new E\ForbiddenException('Chỉ người được giao việc (assignee) mới có quyền gửi duyệt task này');
-        }
-
-        // Chuyển trạng thái qua Guard (từ Đang thực hiện -> Chờ duyệt)
-        $guard = TaskWorkflowGuard::makeInstance();
-        return $guard->executeTransition($siteID, $taskID, $actorID, 'Chờ duyệt', $note);
-    }
-
-    /**
-     * Story 4.4 - Manager phê duyệt task
-     */
-    function approveTask($siteID, $taskID, $actorID, $hasManageTaskPrivilege, $note) {
-        if (!$hasManageTaskPrivilege) {
-            throw new E\ForbiddenException('Chỉ có Manager (người có quyền manageTask) mới được phê duyệt task');
-        }
-
-        // Chuyển trạng thái qua Guard (từ Chờ duyệt -> Hoàn thành)
-        $guard = TaskWorkflowGuard::makeInstance();
-        return $guard->executeTransition($siteID, $taskID, $actorID, 'Hoàn thành', $note);
-    }
-
-    /**
-     * Story 4.5 - Manager yêu cầu làm lại task
-     */
-    function reworkTask($siteID, $taskID, $actorID, $hasManageTaskPrivilege, $note) {
-        if (!$hasManageTaskPrivilege) {
-            throw new E\ForbiddenException('Chỉ có Manager (người có quyền manageTask) mới được yêu cầu làm lại task');
-        }
-
-        // Chuyển trạng thái qua Guard (từ Chờ duyệt -> Đang thực hiện)
-        $guard = TaskWorkflowGuard::makeInstance();
-        return $guard->executeTransition($siteID, $taskID, $actorID, 'Đang thực hiện', $note);
     }
 }

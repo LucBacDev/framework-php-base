@@ -14,7 +14,7 @@ class DepartmentList extends PureComponent {
     }
 
     componentDidMount() {
-        App.requireLogin();
+        App.requireLogin({ privilege: 'manageDepartment' });
         this.getDepartments();
     }
 

@@ -19,7 +19,7 @@ class EmployeeList extends PureComponent {
     }
 
     componentDidMount() {
-        App.requireLogin();
+        App.requireLogin({ privilege: 'manageUser' });
         this.getEmployees();
     }
 

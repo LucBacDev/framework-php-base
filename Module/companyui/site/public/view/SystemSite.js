@@ -57,7 +57,7 @@ class SystemSite extends PureComponent {
     handleChooseSite(site) {
         // set site active 
         localStorage.setItem('site', site.id);
-        window.location.href = App.url('/:siteID/nhansu', { siteID: site.id });
+        window.location.href = App.url('/:siteID/task', { siteID: site.id });
     }
 
     render() {

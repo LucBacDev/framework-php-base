@@ -39,9 +39,10 @@ class TaskWorkflowGuard extends Mapper {
      * Key = From Status, Value = Array of To Statuses
      */
     protected $validTransitions = [
-        'Mới' => ['Đang thực hiện'],
-        'Đang thực hiện' => ['Chờ duyệt'],
-        'Chờ duyệt' => ['Hoàn thành', 'Đang thực hiện'] // Đang thực hiện có nghĩa là Rework
+        'Mới' => ['Đang thực hiện', 'Chờ duyệt', 'Hoàn thành'],
+        'Đang thực hiện' => ['Chờ duyệt', 'Hoàn thành', 'Mới'],
+        'Chờ duyệt' => ['Hoàn thành', 'Đang thực hiện', 'Mới'],
+        'Hoàn thành' => ['Mới', 'Đang thực hiện', 'Chờ duyệt']
     ];
 
     /**
@@ -126,6 +127,8 @@ class TaskWorkflowGuard extends Mapper {
         $this->db->insert('task_audit_log', $auditData);
 
         $this->completeTransOrFail();
+
+        TaskMapper::makeInstance()->syncToElastic($siteID, $taskID);
 
         return result(true, [
             'taskID' => $taskID,

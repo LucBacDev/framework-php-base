@@ -19,7 +19,10 @@ class TaskKanban extends PureComponent {
             employees: [],
             filter: {
                 search: ''
-            }
+            },
+            selectedAssignees: [], // Mảng chứa ID nhân viên được chọn
+            assigneeSearch: '',
+            showAssigneeDropdown: false
         };
 
         this.columnsRefs = {};
@@ -34,8 +37,23 @@ class TaskKanban extends PureComponent {
     }
 
     fetchEmployees() {
-        this.employeeModel.getEmployees({ pageSize: 100, active: 1 }).then(res => {
-            this.setState({ employees: res.data || [] });
+        const userId = App.user ? App.user.id : null;
+        
+        this.employeeModel.getEmployees({ pageSize: 500, active: 1 }).then(res => {
+            let emps = (res && res.data) ? (Array.isArray(res.data) ? res.data : (res.data.items || [])) : (res.items || res || []);
+            
+            // Kỹ thuật Tự dò tìm: Tìm chính mình trong danh sách để lấy depFK chuẩn
+            const me = emps.find(e => e.id === userId);
+            const myDepFK = me ? me.depFK : null;
+
+            console.log('My discovered Department:', myDepFK);
+
+            // Nếu không phải Admin tối cao và tìm thấy phòng ban của mình
+            if (!App.isFullControl && myDepFK && myDepFK !== '0') {
+                emps = emps.filter(e => e.depFK === myDepFK);
+            }
+
+            this.setState({ employees: emps });
         }).catch(err => {
             console.error('Lỗi tải danh sách nhân viên:', err);
         });
@@ -81,56 +99,112 @@ class TaskKanban extends PureComponent {
 
     fetchTasks() {
         this.taskModel.getTasks(this.state.filter).then((res) => {
+            console.log('API Response:', res);
             const newBoard = JSON.parse(JSON.stringify(this.INITIAL_COLUMNS));
-            // res.data chứa { items, total, ... }
-            const data = res.data || {};
-            const items = Array.isArray(data.items) ? data.items : [];
+            
+            // Lấy items: res có thể là { success, data: { items } } hoặc { items } hoặc mảng trực tiếp
+            let items = [];
+            if (res && res.data && Array.isArray(res.data.items)) {
+                items = res.data.items;
+            } else if (res && Array.isArray(res.items)) {
+                items = res.items;
+            } else if (Array.isArray(res)) {
+                items = res;
+            } else if (res && res.data && Array.isArray(res.data)) {
+                items = res.data;
+            }
+            
+            console.log('Extracted Items:', items);
             
             items.forEach(task => {
+                // Giải mã progress từ attrs
+                if (task.attrs) {
+                    try {
+                        const attrs = typeof task.attrs === 'string' ? JSON.parse(task.attrs) : task.attrs;
+                        task.progress = attrs.progress || 0;
+                    } catch(e) { task.progress = 0; }
+                } else {
+                    task.progress = 0;
+                }
+
                 const status = task.status || 'Mới';
-                if (newBoard[status]) {
-                    newBoard[status].items.push(task);
+                // Kiểm tra khớp tên cột (không phân biệt hoa thường, cắt khoảng trắng thừa)
+                const matchedKey = Object.keys(newBoard).find(key => 
+                    key.trim().toLowerCase() === status.trim().toLowerCase()
+                );
+
+                if (matchedKey) {
+                    newBoard[matchedKey].items.push(task);
                 } else {
                     newBoard['Mới'].items.push(task);
                 }
             });
+            
+            console.log('New Board Data:', newBoard);
             this.setState({ boardData: newBoard });
         }).catch(err => {
-            console.error(err);
-            Alert.open('Lỗi tải danh sách công việc');
+            console.error('Fetch tasks error details:', err);
+            let msg = 'Lỗi tải danh sách công việc';
+            if (err.responseJSON && err.responseJSON.message) {
+                msg = err.responseJSON.message;
+            } else if (err.responseText) {
+                // Nếu là lỗi HTML (Server crash), hiện 50 ký tự đầu để nhận diện
+                msg = 'Lỗi Server: ' + err.responseText.substring(0, 100);
+            }
+            Alert.open(msg);
         });
     }
 
     handleDragEnd(evt) {
-        const { from, to, item } = evt;
+        const { from, to, item, oldIndex } = evt;
         const fromColId = from.getAttribute('data-column-id');
         const toColId = to.getAttribute('data-column-id');
 
         if (fromColId === toColId) {
-            return this.fetchTasks();
+            return;
+        }
+
+        // Kỹ thuật "Hoàn tác DOM": Đưa thẻ về vị trí cũ trước khi React render lại
+        // Điều này giúp React không bị lỗi 'removeChild' vì nó vẫn thấy node ở chỗ cũ
+        if (from !== to) {
+            if (from.children[oldIndex]) {
+                from.insertBefore(item, from.children[oldIndex]);
+            } else {
+                from.appendChild(item);
+            }
         }
 
         const taskId = item.getAttribute('data-id');
         let apiCall = null;
 
-        if (fromColId === 'Mới' && toColId === 'Đang thực hiện') {
-            apiCall = this.taskModel.startTask(taskId);
-        } else if (fromColId === 'Đang thực hiện' && toColId === 'Chờ duyệt') {
+        if (toColId === 'Đang thực hiện') {
+            apiCall = (fromColId === 'Chờ duyệt') ? this.taskModel.reworkTask(taskId) : this.taskModel.startTask(taskId);
+        } else if (toColId === 'Chờ duyệt') {
             apiCall = this.taskModel.submitTask(taskId);
-        } else if (fromColId === 'Chờ duyệt' && toColId === 'Hoàn thành') {
+        } else if (toColId === 'Hoàn thành') {
             apiCall = this.taskModel.approveTask(taskId);
-        } else if (fromColId === 'Chờ duyệt' && toColId === 'Đang thực hiện') {
-            apiCall = this.taskModel.reworkTask(taskId);
+        } else if (toColId === 'Mới') {
+            apiCall = this.taskModel.resetTask(taskId);
         } else {
             Alert.open('Chuyển trạng thái không hợp lệ!');
-            return this.fetchTasks();
+            this.fetchTasks();
+            return;
         }
 
         if (apiCall) {
             apiCall.then(() => {
                 this.fetchTasks();
             }).catch(xhr => {
-                const msg = xhr.responseJSON ? xhr.responseJSON.message : 'Lỗi chuyển trạng thái';
+                // Ưu tiên lấy message từ responseJSON, nếu không có thử responseText, cuối cùng là mặc định
+                let msg = 'Bạn không có quyền chuyển sang hoàn thành';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                } else if (xhr.responseText) {
+                    try {
+                        const res = JSON.parse(xhr.responseText);
+                        if (res.message) msg = res.message;
+                    } catch(e) {}
+                }
                 Alert.open(msg);
                 this.fetchTasks();
             });
@@ -138,52 +212,127 @@ class TaskKanban extends PureComponent {
     }
 
     openCreateModal() {
-        this.setState({ editingTask: null, isModalOpen: true });
+        this.setState({ editingTask: null, isModalOpen: true, selectedAssignees: [], assigneeSearch: '' }, () => {
+            this.initEditor('');
+        });
     }
 
     openEditModal(task) {
-        this.setState({ editingTask: task, isModalOpen: true });
+        const ids = task.assigneeIDs ? task.assigneeIDs.split(',').map(s => s.trim()) : [];
+        this.setState({ editingTask: task, isModalOpen: true, selectedAssignees: ids, assigneeSearch: '' }, () => {
+            this.initEditor(task.description || '');
+        });
+    }
+
+    initEditor(content) {
+        if (typeof Quill === 'undefined') {
+            setTimeout(() => this.initEditor(content), 200);
+            return;
+        }
+
+        const container = document.getElementById('editor-container');
+        if (!container) return;
+
+        // Xóa nội dung cũ nếu có
+        container.innerHTML = '';
+        
+        this.quill = new Quill(container, {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['blockquote', 'code-block'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['link', 'image', 'video'],
+                    ['clean']
+                ]
+            },
+            placeholder: 'Nhập mô tả chi tiết, chèn ảnh hoặc video tại đây...'
+        });
+
+        if (content) {
+            this.quill.clipboard.dangerouslyPasteHTML(content);
+        }
     }
 
     closeModal() {
         this.setState({ isModalOpen: false });
+        this.quill = null;
     }
 
     saveTask(taskData) {
+        // Lấy nội dung từ editor
+        const description = this.quill ? this.quill.root.innerHTML : '';
+        taskData.description = description;
+
         if (this.state.editingTask) {
             let promises = [];
             const t = this.state.editingTask;
-            if (taskData.progress !== t.progress) {
-                promises.push(this.taskModel.updateProgress(t.id, taskData.progress));
+
+            // Kiểm tra nếu chưa chọn ai (Jira style)
+            if (!taskData.assignee || taskData.assignee.length === 0) {
+                Alert.open('Vui lòng chọn ít nhất một người thực hiện');
+                return;
             }
-            if (taskData.due_time !== t.dueTime) {
+
+            // 1. Cập nhật thông tin chung + Tiến độ (Gộp chung để tránh xung đột ghi đè)
+            const progressChanged = parseInt(taskData.progress) !== parseInt(t.progress);
+            const infoChanged = taskData.title !== t.title || taskData.description !== t.description || taskData.priority !== t.priority;
+            
+            if (infoChanged || progressChanged) {
+                promises.push(this.taskModel.updateTask(t.id, {
+                    title: taskData.title,
+                    description: taskData.description, // HTML content
+                    priority: taskData.priority,
+                    progress: taskData.progress
+                }));
+            }
+
+            // 2. Cập nhật Deadline
+            const oldDue = t.dueTime ? t.dueTime.substring(0, 16).replace(' ', 'T') : '';
+            const newDue = taskData.due_time ? taskData.due_time.substring(0, 16) : '';
+            if (newDue !== oldDue) {
                 promises.push(this.taskModel.updateDeadline(t.id, taskData.due_time));
             }
+
+            // 3. Cập nhật người thực hiện (Assign To)
+            const oldAssignees = t.assigneeIDs ? t.assigneeIDs.split(',').map(s => s.trim()).sort().join(',') : '';
+            const newAssignees = [...taskData.assignee].sort().join(',');
+            
+            if (newAssignees !== oldAssignees) {
+                promises.push(this.taskModel.assignIndividual(t.id, taskData.assignee));
+            }
+
             if (promises.length > 0) {
                 Promise.all(promises).then(() => {
+                    Alert.open('Cập nhật thành công');
                     this.closeModal();
                     this.fetchTasks();
                 }).catch(err => {
-                    Alert.open('Lỗi cập nhật');
+                    console.error('Update error:', err);
+                    const msg = (err && err.responseJSON) ? err.responseJSON.message : 'Lỗi cập nhật dữ liệu';
+                    Alert.open(msg);
                 });
             } else {
                 this.closeModal();
             }
         } else {
+            // Logic cho Create Task
+            if (!taskData.assignee || taskData.assignee.length === 0) {
+                Alert.open('Vui lòng chọn ít nhất một người thực hiện');
+                return;
+            }
+
             this.taskModel.createTask(taskData).then((res) => {
-                if (taskData.assignee) {
-                    this.taskModel.assignIndividual(res.data.id, taskData.assignee).then(() => {
-                        this.closeModal();
-                        this.fetchTasks();
-                    }).catch(() => {
-                        this.closeModal();
-                        this.fetchTasks();
-                        Alert.open('Task created but assignment failed');
-                    });
-                } else {
+                this.taskModel.assignIndividual(res.data.id, taskData.assignee).then(() => {
+                    Alert.open('Tạo công việc thành công');
                     this.closeModal();
                     this.fetchTasks();
-                }
+                }).catch(() => {
+                    this.closeModal();
+                    this.fetchTasks();
+                });
             }).catch(xhr => {
                 Alert.open('Lỗi tạo mới');
             });
@@ -196,7 +345,7 @@ class TaskKanban extends PureComponent {
                 this.taskModel.deleteTask(id).then(() => {
                     this.closeModal();
                     this.fetchTasks();
-                }).catch(xhr => Alert.open('Lỗi xóa công việc'));
+                }).catch(xhr => Alert.open('Bạn không có quyền xoá'));
             }
         });
     }
@@ -219,18 +368,16 @@ class TaskKanban extends PureComponent {
                     <span className={`px-2 py-0.5 bg-${priorityColor}-50 text-${priorityColor}-600 rounded text-[10px] font-bold uppercase tracking-wider`}>
                         {item.priority || 'Vừa'}
                     </span>
-                    {isDone ? (
-                        <span className="material-symbols-outlined text-teal-600 text-sm">check_circle</span>
-                    ) : (
-                        <span className="material-symbols-outlined text-slate-300 transition-opacity drag-handle cursor-grab">drag_indicator</span>
-                    )}
+                    <div className="flex items-center gap-1">
+                        {isDone && (
+                            <span className="material-symbols-outlined text-teal-600 text-sm">check_circle</span>
+                        )}
+                        <span className="material-symbols-outlined text-slate-300 transition-opacity drag-handle cursor-grab hover:text-slate-500">drag_handle</span>
+                    </div>
                 </div>
                 <h3 className={`font-bold mb-1 text-sm ${isDone ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
                     {item.title}
                 </h3>
-                {item.description && (
-                    <p className="text-slate-500 text-xs line-clamp-2 mb-3">{item.description}</p>
-                )}
                 <div className="flex items-center justify-between mt-4">
                     <div className="flex items-center gap-2">
                         {item.priority === 'Cao' && <span className="material-symbols-outlined text-red-500 text-sm">priority_high</span>}
@@ -244,11 +391,19 @@ class TaskKanban extends PureComponent {
                         {item.progress !== undefined && (
                             <span className="text-xs font-bold text-teal-600 mr-2">{item.progress}%</span>
                         )}
-                        {item.assignee && (
-                            <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center text-[10px] font-bold text-teal-700">
-                                {item.assignee.substring(0, 2).toUpperCase()}
-                            </div>
-                        )}
+                        {item.assigneeIDs && item.assigneeIDs.split(',').map((id, index) => {
+                            const names = item.assignees ? item.assignees.split(', ') : [];
+                            const name = names[index] || '??';
+                            return (
+                                <div 
+                                    key={id} 
+                                    title={name}
+                                    className="w-6 h-6 rounded-full bg-teal-100 border-2 border-white flex items-center justify-center text-[9px] font-bold text-teal-700 shadow-sm"
+                                >
+                                    {name.substring(0, 2).toUpperCase()}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
@@ -312,11 +467,11 @@ class TaskKanban extends PureComponent {
                             e.preventDefault();
                             this.saveTask({
                                 title: e.target.title.value,
-                                description: e.target.description.value,
+                                // description được lấy trực tiếp từ Quill trong hàm saveTask
                                 priority: e.target.priority ? e.target.priority.value : 'Vừa',
-                                progress: isEdit && e.target.progress ? parseInt(e.target.progress.value) : 0,
+                                progress: e.target.progress ? parseInt(e.target.progress.value) : 0,
                                 due_time: e.target.due_time.value,
-                                assignee: e.target.assignee ? e.target.assignee.value : null
+                                assignee: this.state.selectedAssignees
                             });
                         }}>
                         <div className="px-8 py-8 space-y-8 overflow-y-auto">
@@ -378,47 +533,93 @@ class TaskKanban extends PureComponent {
                                     </div>
                                 </div>
 
-                                {isEdit && (
-                                    <div className="space-y-2">
-                                        <label className="block text-slate-700 text-xs font-semibold">Progress (%)</label>
-                                        <input name="progress" type="number" min="0" max="100" defaultValue={task.progress || 0} className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-600/10 transition-all outline-none" />
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Assignee Selection (Custom Grid) */}
-                            <div className="space-y-3">
-                                <label className="block text-slate-700 text-xs font-semibold">Assign To</label>
-                                <div className="grid grid-cols-4 gap-3 max-h-[280px] overflow-y-auto p-1 pr-2 custom-scrollbar">
-                                    {this.state.employees.map(emp => (
-                                        <label key={emp.id} className="cursor-pointer group">
-                                            <input 
-                                                className="hidden peer" 
-                                                name="assignee" 
-                                                type="radio" 
-                                                value={emp.id}
-                                                defaultChecked={task.assigneeID === emp.id}
-                                            />
-                                            <div className="flex flex-col items-center gap-2 p-3 border border-slate-200 rounded-lg peer-checked:border-teal-600 peer-checked:bg-teal-50 hover:bg-slate-50 transition-all h-full">
-                                                <img className="w-10 h-10 rounded-full shrink-0" src={`https://ui-avatars.com/api/?name=${encodeURIComponent(emp.fullname)}&background=random&color=fff`}/>
-                                                <span className="text-[10px] text-slate-600 font-semibold text-center line-clamp-2 leading-tight">{emp.fullname}</span>
-                                            </div>
-                                        </label>
-                                    ))}
-                                    {this.state.employees.length === 0 && (
-                                        <div className="col-span-4 text-center py-8 bg-slate-50 rounded-lg border border-dashed border-slate-200">
-                                            <span className="text-slate-400 text-xs font-medium">No employees available</span>
-                                        </div>
-                                    )}
+                                <div className="space-y-2">
+                                    <label className="block text-slate-700 text-xs font-semibold">Progress (%)</label>
+                                    <input name="progress" type="number" min="0" max="100" defaultValue={task.progress || 0} className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-600/10 transition-all outline-none" />
                                 </div>
                             </div>
 
-                            {/* Description */}
+                            {/* Assignee Selection (Jira Style Multi-select) */}
+                            <div className="space-y-2">
+                                <label className="block text-slate-700 text-xs font-semibold">Assign To</label>
+                                <div className="relative">
+                                    {/* Selected Tags Area */}
+                                    <div className="min-h-[44px] p-1.5 bg-white border border-slate-300 rounded-lg flex flex-wrap gap-2 items-center focus-within:border-teal-600 focus-within:ring-2 focus-within:ring-teal-600/10 transition-all">
+                                        {this.state.selectedAssignees.map(id => {
+                                            const emp = this.state.employees.find(e => e.id === id);
+                                            if (!emp) return null;
+                                            return (
+                                                <div key={id} className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 border border-slate-200 rounded text-sm text-slate-700 font-medium">
+                                                    <span>{emp.fullname}</span>
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => {
+                                                            this.setState({ 
+                                                                selectedAssignees: this.state.selectedAssignees.filter(sid => sid !== id) 
+                                                            });
+                                                        }}
+                                                        className="hover:text-red-500 transition-colors"
+                                                    >
+                                                        <span className="material-symbols-outlined text-[16px]">close</span>
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                        <input 
+                                            className="flex-1 min-w-[120px] outline-none text-sm px-2 py-1"
+                                            placeholder={this.state.selectedAssignees.length === 0 ? "Tìm tên nhân sự..." : ""}
+                                            value={this.state.assigneeSearch}
+                                            onChange={(e) => this.setState({ assigneeSearch: e.target.value, showAssigneeDropdown: true })}
+                                            onFocus={() => this.setState({ showAssigneeDropdown: true })}
+                                        />
+                                    </div>
+
+                                    {/* Dropdown Results */}
+                                    {this.state.showAssigneeDropdown && (this.state.assigneeSearch || this.state.showAssigneeDropdown) && (
+                                        <div className="absolute z-[1100] top-full left-0 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-[200px] overflow-y-auto overflow-x-hidden">
+                                            {this.state.employees
+                                                .filter(emp => !this.state.selectedAssignees.includes(emp.id))
+                                                .filter(emp => emp.fullname.toLowerCase().includes(this.state.assigneeSearch.toLowerCase()))
+                                                .map(emp => (
+                                                    <div 
+                                                        key={emp.id}
+                                                        onClick={() => {
+                                                            this.setState({ 
+                                                                selectedAssignees: [...this.state.selectedAssignees, emp.id],
+                                                                assigneeSearch: '',
+                                                                showAssigneeDropdown: false
+                                                            });
+                                                        }}
+                                                        className="px-4 py-2.5 hover:bg-slate-50 cursor-pointer text-sm text-slate-700 transition-colors flex items-center justify-between group"
+                                                    >
+                                                        <span>{emp.fullname}</span>
+                                                        <span className="material-symbols-outlined text-[18px] text-slate-300 opacity-0 group-hover:opacity-100">add</span>
+                                                    </div>
+                                                ))
+                                            }
+                                            {this.state.employees.length === 0 && (
+                                                <div className="p-4 text-center text-slate-400 text-xs">Không có nhân sự</div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                {/* Backdrop to close dropdown */}
+                                {this.state.showAssigneeDropdown && (
+                                    <div 
+                                        className="fixed inset-0 z-[1090]" 
+                                        onClick={() => this.setState({ showAssigneeDropdown: false })}
+                                    />
+                                )}
+                            </div>
+
+                            {/* Description (Rich Text) */}
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                     <label className="block text-slate-700 text-xs font-semibold">Description</label>
                                 </div>
-                                <textarea name="description" defaultValue={task.description} className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm focus:border-teal-600 focus:ring-2 focus:ring-teal-600/10 transition-all resize-none placeholder:text-slate-400 outline-none" placeholder="Describe the task requirements and acceptance criteria..." rows="4"></textarea>
+                                <div className="bg-white rounded-lg border border-slate-300 overflow-hidden">
+                                    <div id="editor-container" style={{ minHeight: '200px', border: 'none' }}></div>
+                                </div>
                             </div>
                         </div>
 
@@ -445,7 +646,7 @@ class TaskKanban extends PureComponent {
     }
 
     render() {
-        // Render inside AdminLayout
+        // ... (phần còn lại của hàm onSubmit để xử lý dữ liệu mới)
         return (
             <AdminLayout>
                 <div className="p-4" style={{ fontFamily: "'Inter', sans-serif" }}>

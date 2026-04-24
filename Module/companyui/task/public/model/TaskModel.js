@@ -19,6 +19,14 @@ class TaskModel {
         });
     }
 
+    updateTask(id, data) {
+        return $.rest({
+            url: this.apiBase + '/' + id,
+            method: 'PATCH',
+            data: data
+        });
+    }
+
     assignIndividual(taskId, assigneeId) {
         return $.rest({
             url: App.url('/:siteID/rest/task/tasks/:taskID/assign/individual', { siteID: App.siteID, taskID: taskId }),
@@ -63,6 +71,14 @@ class TaskModel {
             url: this.apiBase + '/' + id + '/rework',
             method: 'POST',
             data: { note: 'Yêu cầu làm lại từ Kanban' }
+        });
+    }
+
+    resetTask(id) {
+        return $.rest({
+            url: this.apiBase + '/' + id + '/reset',
+            method: 'POST',
+            data: { note: 'Reset trạng thái từ Kanban' }
         });
     }
 

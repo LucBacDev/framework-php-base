@@ -103,9 +103,12 @@ class AdminLayout extends \Company\MVC\Layout {
             <head>
                 <meta charset="utf-8">
                 <?php $this->genStyleTags() ?>
+                <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" />
+                <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
                 <link rel="icon" type="image/png" href="<?php echo ($module->getPublicURL().'/images/logo_minerva.ico'); ?>"/>
             </head>
             <body>
+                <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
                 <script>
                     App = window.App || {};
                     App.siteUrl = <?php echo json_encode(url()) ?>;

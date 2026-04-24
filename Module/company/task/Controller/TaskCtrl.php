@@ -19,30 +19,30 @@ class TaskCtrl extends \Company\MVC\Controller {
 
             $input = $this->input();
             $actorID = $this->auth->getUser()->id;
-            $hasManageTaskPrivilege = $this->auth->hasPrivilege('manageTask');
+            // Đảm bảo lấy quyền của đúng Site hiện tại
+            $privileges = $this->auth->getAllUserPrivs($this->auth->getUser());
 
-            // Parse Filters
+            // Parse Filters ... (giữ nguyên)
             $filters = [
-                'view' => (string) arrData($input, 'view', 'my_tasks'), // 'my_tasks' hoặc 'pending_approval'
                 'status' => (string) arrData($input, 'status', ''),
                 'priority' => (string) arrData($input, 'priority', ''),
-                'isOverdue' => (string) arrData($input, 'isOverdue', 'false') === 'true',
-                'isDueSoon' => (string) arrData($input, 'isDueSoon', 'false') === 'true',
                 'search' => (string) arrData($input, 'search', ''),
                 'page' => max(1, (int) arrData($input, 'page', 1)),
-                'pageSize' => max(1, min(100, (int) arrData($input, 'pageSize', 20))),
-                'sortBy' => (string) arrData($input, 'sortBy', 'createdDate'), // createdDate, deadline
-                'sortOrder' => strtoupper((string) arrData($input, 'sortOrder', 'DESC')) === 'ASC' ? 'ASC' : 'DESC'
+                'pageSize' => max(1, min(100, (int) arrData($input, 'pageSize', 20)))
             ];
 
-            $result = $this->taskMapper->getTasks($siteID, $actorID, $hasManageTaskPrivilege, $filters);
+            $result = $this->taskMapper->getTasks($siteID, $actorID, $privileges, $filters);
             $this->resp->setBody(json_encode($result));
         } catch (\Company\Exception\ForbiddenException $e) {
             $this->resp->setStatus(403);
-            $this->resp->setBody(json_encode(result(false, $e->getMessage(), 403)));
+            $this->resp->setBody(json_encode(['success' => false, 'message' => $e->getMessage(), 'code' => 403]));
         } catch (\Exception $e) {
             $this->resp->setStatus(500);
-            $this->resp->setBody(json_encode(result(false, $e->getMessage(), 500)));
+            $this->resp->setBody(json_encode([
+                'success' => false, 
+                'message' => 'Lỗi Server: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine(), 
+                'code' => 500
+            ]));
         }
     }
 
@@ -67,7 +67,6 @@ class TaskCtrl extends \Company\MVC\Controller {
             $this->auth->setSiteID($siteID);
             $this->auth->requireLogin();
             $this->auth->requireSite($siteID);
-            $this->auth->requirePrivilege('manageTask');
 
             $result = $this->taskMapper->createTask($siteID, $this->auth->getUser()->id, $this->input());
             $this->resp->setBody(json_encode($result));
@@ -76,10 +75,14 @@ class TaskCtrl extends \Company\MVC\Controller {
             $this->resp->setBody(json_encode(result(false, $e->getMessage(), 400)));
         } catch (\Company\Exception\ForbiddenException $e) {
             $this->resp->setStatus(403);
-            $this->resp->setBody(json_encode(result(false, $e->getMessage(), 403)));
+            $this->resp->setBody(json_encode(['success' => false, 'message' => $e->getMessage(), 'code' => 403]));
         } catch (\Exception $e) {
             $this->resp->setStatus(500);
-            $this->resp->setBody(json_encode(result(false, $e->getMessage(), 500)));
+            $this->resp->setBody(json_encode([
+                'success' => false, 
+                'message' => 'Lỗi Server: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine(), 
+                'code' => 500
+            ]));
         }
     }
 
@@ -113,25 +116,33 @@ class TaskCtrl extends \Company\MVC\Controller {
             $this->auth->setSiteID($siteID);
             $this->auth->requireLogin();
             $this->auth->requireSite($siteID);
-            $this->auth->requirePrivilege('manageTask');
+            // $this->auth->requirePrivilege('manageTask'); // Gỡ bỏ yêu cầu cứng ở đây
 
             $input = $this->input();
-            $assigneeID = trim((string) arrData($input, 'assigneeID'));
-            if ($assigneeID === '') {
+            $assigneeID = arrData($input, 'assigneeID'); // Không ép kiểu string ở đây
+            
+            if (empty($assigneeID)) {
                 throw new \Company\Exception\BadRequestException('Thiếu trường bắt buộc: assigneeID');
             }
 
-            $result = $this->taskMapper->assignIndividual($siteID, $taskID, $assigneeID, $this->auth->getUser()->id);
+            $actorID = $this->auth->getUser()->id;
+            $privileges = $this->auth->getAllUserPrivs();
+
+            $result = $this->taskMapper->assignIndividual($siteID, $taskID, $assigneeID, $actorID, $privileges);
             $this->resp->setBody(json_encode($result));
         } catch (\Company\Exception\BadRequestException $e) {
             $this->resp->setStatus(400);
             $this->resp->setBody(json_encode(result(false, $e->getMessage(), 400)));
         } catch (\Company\Exception\ForbiddenException $e) {
             $this->resp->setStatus(403);
-            $this->resp->setBody(json_encode(result(false, $e->getMessage(), 403)));
+            $this->resp->setBody(json_encode(['success' => false, 'message' => $e->getMessage(), 'code' => 403]));
         } catch (\Exception $e) {
             $this->resp->setStatus(500);
-            $this->resp->setBody(json_encode(result(false, $e->getMessage(), 500)));
+            $this->resp->setBody(json_encode([
+                'success' => false, 
+                'message' => 'Lỗi Server: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine(), 
+                'code' => 500
+            ]));
         }
     }
 
@@ -144,7 +155,7 @@ class TaskCtrl extends \Company\MVC\Controller {
             $this->auth->setSiteID($siteID);
             $this->auth->requireLogin();
             $this->auth->requireSite($siteID);
-            $this->auth->requirePrivilege('manageTask');
+            // $this->auth->requirePrivilege('manageTask'); // Gỡ bỏ yêu cầu cứng ở đây
 
             $input = $this->input();
             $departmentID = trim((string) arrData($input, 'departmentID'));
@@ -159,10 +170,14 @@ class TaskCtrl extends \Company\MVC\Controller {
             $this->resp->setBody(json_encode(result(false, $e->getMessage(), 400)));
         } catch (\Company\Exception\ForbiddenException $e) {
             $this->resp->setStatus(403);
-            $this->resp->setBody(json_encode(result(false, $e->getMessage(), 403)));
+            $this->resp->setBody(json_encode(['success' => false, 'message' => $e->getMessage(), 'code' => 403]));
         } catch (\Exception $e) {
             $this->resp->setStatus(500);
-            $this->resp->setBody(json_encode(result(false, $e->getMessage(), 500)));
+            $this->resp->setBody(json_encode([
+                'success' => false, 
+                'message' => 'Lỗi Server: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine(), 
+                'code' => 500
+            ]));
         }
     }
 
@@ -196,7 +211,32 @@ class TaskCtrl extends \Company\MVC\Controller {
             $this->resp->setBody(json_encode(result(false, $e->getMessage(), 400)));
         } catch (\Company\Exception\ForbiddenException $e) {
             $this->resp->setStatus(403);
-            $this->resp->setBody(json_encode(result(false, $e->getMessage(), 403)));
+            $this->resp->setBody(json_encode(['success' => false, 'message' => $e->getMessage(), 'code' => 403]));
+        } catch (\Exception $e) {
+            $this->resp->setStatus(500);
+            $this->resp->setBody(json_encode([
+                'success' => false, 
+                'message' => 'Lỗi Server: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine(), 
+                'code' => 500
+            ]));
+        }
+    }
+
+    /**
+     * Cập nhật thông tin chung Task
+     * PATCH /:siteID/rest/task/tasks/:taskID
+     */
+    function updateTask($siteID, $taskID) {
+        try {
+            $this->auth->setSiteID($siteID);
+            $this->auth->requireLogin();
+            $this->auth->requireSite($siteID);
+
+            $actorID = $this->auth->getUser()->id;
+            $hasManageTaskPrivilege = $this->auth->hasPrivilege('manageTask');
+
+            $result = $this->taskMapper->updateTask($siteID, $taskID, $actorID, $hasManageTaskPrivilege, $this->input());
+            $this->resp->setBody(json_encode($result));
         } catch (\Exception $e) {
             $this->resp->setStatus(500);
             $this->resp->setBody(json_encode(result(false, $e->getMessage(), 500)));
@@ -217,9 +257,9 @@ class TaskCtrl extends \Company\MVC\Controller {
             $reason = trim((string) arrData($input, 'reason', ''));
 
             $actorID = $this->auth->getUser()->id;
-            $hasManageTaskPrivilege = $this->auth->hasPrivilege('manageTask');
+            $privileges = $this->auth->getAllUserPrivs();
 
-            $result = $this->taskMapper->deleteTask($siteID, $taskID, $actorID, $hasManageTaskPrivilege, $reason);
+            $result = $this->taskMapper->deleteTask($siteID, $taskID, $actorID, $privileges, $reason);
             $this->resp->setBody(json_encode($result));
         } catch (\Company\Exception\BadRequestException $e) {
             $this->resp->setStatus(400);
@@ -245,7 +285,7 @@ class TaskCtrl extends \Company\MVC\Controller {
             $this->auth->setSiteID($siteID);
             $this->auth->requireLogin();
             $this->auth->requireSite($siteID);
-            $this->auth->requirePrivilege('manageTask');
+            // $this->auth->requirePrivilege('manageTask'); // Gỡ bỏ yêu cầu cứng ở đây
 
             $input = $this->input();
             $dueTime = trim((string) arrData($input, 'dueTime', ''));
@@ -255,8 +295,9 @@ class TaskCtrl extends \Company\MVC\Controller {
             $startTime = trim((string) arrData($input, 'startTime', ''));
 
             $actorID = $this->auth->getUser()->id;
+            $privileges = $this->auth->getAllUserPrivs();
 
-            $result = $this->taskMapper->updateDeadline($siteID, $taskID, $actorID, $startTime, $dueTime);
+            $result = $this->taskMapper->updateDeadline($siteID, $taskID, $actorID, $startTime, $dueTime, $privileges);
             $this->resp->setBody(json_encode($result));
         } catch (\Company\Exception\BadRequestException $e) {
             $this->resp->setStatus(400);
@@ -291,8 +332,9 @@ class TaskCtrl extends \Company\MVC\Controller {
             $note = trim((string) arrData($input, 'note', ''));
 
             $actorID = $this->auth->getUser()->id;
+            $hasManageTaskPrivilege = $this->auth->hasPrivilege('manageTask');
 
-            $result = $this->taskMapper->updateProgress($siteID, $taskID, $actorID, $progress, $note);
+            $result = $this->taskMapper->updateProgress($siteID, $taskID, $actorID, $hasManageTaskPrivilege, $progress, $note);
             $this->resp->setBody(json_encode($result));
         } catch (\Company\Exception\BadRequestException $e) {
             $this->resp->setStatus(400);
@@ -335,10 +377,14 @@ class TaskCtrl extends \Company\MVC\Controller {
             $this->resp->setBody(json_encode(result(false, $e->getMessage(), 400)));
         } catch (\Company\Exception\ForbiddenException $e) {
             $this->resp->setStatus(403);
-            $this->resp->setBody(json_encode(result(false, $e->getMessage(), 403)));
+            $this->resp->setBody(json_encode(['success' => false, 'message' => $e->getMessage(), 'code' => 403]));
         } catch (\Exception $e) {
             $this->resp->setStatus(500);
-            $this->resp->setBody(json_encode(result(false, $e->getMessage(), 500)));
+            $this->resp->setBody(json_encode([
+                'success' => false, 
+                'message' => 'Lỗi Server: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine(), 
+                'code' => 500
+            ]));
         }
     }
 
@@ -356,8 +402,9 @@ class TaskCtrl extends \Company\MVC\Controller {
             $note = trim((string) arrData($input, 'note', ''));
 
             $actorID = $this->auth->getUser()->id;
+            $hasManageTaskPrivilege = $this->auth->hasPrivilege('manageTask');
 
-            $result = $this->taskMapper->startTask($siteID, $taskID, $actorID, $note);
+            $result = $this->taskMapper->startTask($siteID, $taskID, $actorID, $hasManageTaskPrivilege, $note);
             $this->resp->setBody(json_encode($result));
         } catch (\Company\Exception\BadRequestException $e) {
             $this->resp->setStatus(400);
@@ -393,8 +440,9 @@ class TaskCtrl extends \Company\MVC\Controller {
             }
 
             $actorID = $this->auth->getUser()->id;
+            $hasManageTaskPrivilege = $this->auth->hasPrivilege('manageTask');
 
-            $result = $this->taskMapper->submitTask($siteID, $taskID, $actorID, $note);
+            $result = $this->taskMapper->submitTask($siteID, $taskID, $actorID, $hasManageTaskPrivilege, $note);
             $this->resp->setBody(json_encode($result));
         } catch (\Company\Exception\BadRequestException $e) {
             $this->resp->setStatus(400);
@@ -405,6 +453,30 @@ class TaskCtrl extends \Company\MVC\Controller {
         } catch (\Company\Exception\ConflictException $e) {
             $this->resp->setStatus(409);
             $this->resp->setBody(json_encode(result(false, $e->getMessage(), 409)));
+        } catch (\Exception $e) {
+            $this->resp->setStatus(500);
+            $this->resp->setBody(json_encode(result(false, $e->getMessage(), 500)));
+        }
+    }
+
+    /**
+     * Quay lại trạng thái Mới
+     * POST /:siteID/rest/task/tasks/:taskID/reset
+     */
+    function resetTask($siteID, $taskID) {
+        try {
+            $this->auth->setSiteID($siteID);
+            $this->auth->requireLogin();
+            $this->auth->requireSite($siteID);
+
+            $input = $this->input();
+            $note = trim((string) arrData($input, 'note', ''));
+
+            $actorID = $this->auth->getUser()->id;
+            $hasManageTaskPrivilege = $this->auth->hasPrivilege('manageTask');
+
+            $result = $this->taskMapper->resetTask($siteID, $taskID, $actorID, $hasManageTaskPrivilege, $note);
+            $this->resp->setBody(json_encode($result));
         } catch (\Exception $e) {
             $this->resp->setStatus(500);
             $this->resp->setBody(json_encode(result(false, $e->getMessage(), 500)));

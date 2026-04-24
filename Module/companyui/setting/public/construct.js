@@ -2,7 +2,7 @@ let modules = App.Component.getEventState('Module') || [];
 modules.push("companyui/setting");
 App.Component.trigger('Module', modules);
 
-if(App.getUser().hasPrivilege('accessAdmin')) {
+if(App.getUser().hasPrivilege('fullcontrol')) {
 
     Lang.load('companyui', 'setting').then(() => {
         let navs = App.Component.getEventState('PageNavigator') || [];

@@ -12,16 +12,14 @@ App.Component.trigger('Module', modules);
 Lang.load('companyui', 'task').then(() => {
     let navs = App.Component.getEventState('PageNavigator') || [];
 
-    if (App.isFullControl && App.siteID) {
-        // Add Task to Navigation
-        navs.push({
-            'name': Lang.t("task.nav.name"), 'icon': 'ti ti-layout-media-overlay-alt-2',
-            'module': "companyui/task",
-            'navs': [
-                {'id': 'taskboard', 'name': Lang.t("task.nav.board"), 'href': App.url('/:siteID/task', {siteID: App.siteID})}
-            ]
-        });
-    }
+    // Luôn hiện Quản lý công việc cho tất cả mọi người có quyền accessAdmin
+    navs.push({
+        'name': Lang.t("task.nav.name"), 'icon': 'ti ti-layout-media-overlay-alt-2',
+        'module': "companyui/task",
+        'navs': [
+            {'id': 'taskboard', 'name': Lang.t("task.nav.board"), 'href': App.url('/:siteID/task', {siteID: App.siteID || localStorage.getItem('site')})}
+        ]
+    });
 
     App.Component.trigger('PageNavigator', navs);
 });

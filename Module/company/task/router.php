@@ -30,6 +30,9 @@ R::getInstance()->addRoute(
     new MVC('/:siteID/rest/task/tasks/:taskID/attachments', 'POST', $ctrl, 'uploadAttachmentsTask', new RouterFilter("/rest/task"))
 );
 R::getInstance()->addRoute(
+    new MVC('/:siteID/rest/task/tasks/:taskID', 'PATCH', $ctrl, 'updateTask', new RouterFilter("/rest/task"))
+);
+R::getInstance()->addRoute(
     new MVC('/:siteID/rest/task/tasks/:taskID', 'DELETE', $ctrl, 'deleteTask', new RouterFilter("/rest/task"))
 );
 R::getInstance()->addRoute(
@@ -52,6 +55,9 @@ R::getInstance()->addRoute(
 );
 R::getInstance()->addRoute(
     new MVC('/:siteID/rest/task/tasks/:taskID/rework', 'POST', $ctrl, 'reworkTask', new RouterFilter("/rest/task"))
+);
+R::getInstance()->addRoute(
+    new MVC('/:siteID/rest/task/tasks/:taskID/reset', 'POST', $ctrl, 'resetTask', new RouterFilter("/rest/task"))
 );
 
 // Story 2.2 - Job routes
