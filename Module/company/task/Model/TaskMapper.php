@@ -461,7 +461,9 @@ class TaskMapper extends \Company\SQL\Mapper {
     /**
      * Đồng bộ Task sang Elasticsearch
      */
-    function syncToElastic($siteID, $taskID) {
+    function syncToElastic($siteID, $taskID, $useES = true) {
+        if (!$useES) return;
+
         $sql = "SELECT t.*, 
                     (SELECT GROUP_CONCAT(e.fullname SEPARATOR ', ') FROM task_assignee ta2 JOIN employee e ON ta2.assigneeFK = e.id WHERE ta2.taskFK = t.id AND ta2.deleted = 0 AND e.deleted = 0) as assignees,
                     (SELECT GROUP_CONCAT(e.id) FROM task_assignee ta2 JOIN employee e ON ta2.assigneeFK = e.id WHERE ta2.taskFK = t.id AND ta2.deleted = 0 AND e.deleted = 0) as assigneeIDs

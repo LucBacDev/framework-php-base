@@ -100,7 +100,45 @@ GET task/_search
 
 Kết quả trả về JSON document chứa đầy đủ các thông tin của task.
 
-## 5. Phân tích Ưu - Nhược điểm của giải pháp (Synchronous Update)
+## 5. Ứng dụng Elasticsearch để xuất Báo cáo Thống kê (Aggregations)
+
+Điểm mạnh thực sự của Elasticsearch không chỉ nằm ở tìm kiếm văn bản mà còn ở khả năng **Aggregations** (gom nhóm, đếm số lượng, thống kê). Để tận dụng điều này, hệ thống đã được bổ sung thêm tính năng Báo cáo.
+
+### 5.1. Viết hàm thống kê trong Mapper
+Trong `TaskElasticMapper`, hàm `getTaskReport($siteID)` được thêm vào để sử dụng cấu trúc `aggs` lấy ra số lượng Task theo **Trạng thái (status)** và **Độ ưu tiên (priority)** chỉ với 1 query duy nhất:
+
+```php
+public function getTaskReport($siteID) {
+    $params = [
+        'index' => $this->index,
+        'body' => [
+            'size' => 0, // Chỉ lấy số liệu thống kê, không lấy documents
+            'query' => [
+                'bool' => [
+                    'must' => [
+                        ['term' => ['siteFK.keyword' => $siteID]],
+                        ['term' => ['deleted' => 0]]
+                    ]
+                ]
+            ],
+            'aggs' => [
+                'tasks_by_status' => [
+                    'terms' => ['field' => 'status.keyword', 'size' => 10]
+                ],
+                'tasks_by_priority' => [
+                    'terms' => ['field' => 'priority.keyword', 'size' => 10]
+                ]
+            ]
+        ]
+    ];
+    return $this->conn->search($params)['aggregations'] ?? [];
+}
+```
+
+### 5.2. Mở Endpoint cho Client
+Ở phía Controller (`TaskCtrl.php`), một endpoint `GET /:siteID/rest/task/report` được cung cấp để giao diện gọi và vẽ biểu đồ ngay lập tức với tốc độ phản hồi tính bằng mili-giây.
+
+## 6. Phân tích Ưu - Nhược điểm của giải pháp (Synchronous Update)
 
 Cách làm hiện tại là **Đồng bộ trực tiếp (Synchronous)** từ code PHP lên Elasticsearch (không qua Kafka/Message Queue). Dưới đây là các đánh giá về hướng đi này:
 
@@ -114,32 +152,45 @@ Cách làm hiện tại là **Đồng bộ trực tiếp (Synchronous)** từ co
 *   **Chịu tải kém (Low Throughput):** Khi có lượng traffic đột biến (hàng ngàn người cùng tạo/sửa Task), Elasticsearch có thể trở thành nút thắt cổ chai (bottleneck) và bị quá tải do không có cơ chế xếp hàng (Queue/Buffer).
 *   **Khả năng mất đồng bộ (Data Inconsistency):** Nếu Elasticsearch bị down hoặc mạng chập chờn, dữ liệu lưu ở MySQL thành công nhưng gọi API sang ES thất bại, dẫn đến tình trạng sai lệch dữ liệu giữa DB và ES nếu không có cơ chế lưu vết (retry) hợp lý.
 
-## 6. Kết luận
+## 7. Kết luận
 
 Việc sử dụng trực tiếp API Elasticsearch trong logic code giải quyết tốt bài toán tìm kiếm và đáp ứng tính real-time tuyệt đối. Đây là cách tiếp cận phù hợp cho các module có tần suất thay đổi dữ liệu vừa phải (như Task). Trong tương lai, nếu hệ thống có traffic cực kỳ lớn, ta có thể dễ dàng nâng cấp sang kiến trúc Event-Driven (sử dụng Message Queue) dựa trên bộ khung này.
 
-## 7. Sơ đồ luồng xử lý (Sequence Diagram)
+## 8. Sơ đồ luồng xử lý (Sequence Diagram)
 
 Sơ đồ dưới đây mô tả quá trình từ khi người dùng thao tác trên giao diện cho đến khi dữ liệu được đồng bộ thành công lên Elasticsearch.
 
 ```mermaid
 sequenceDiagram
-    participant UI as 💻 Client (Giao diện)
-    participant Ctrl as 🎛️ TaskCtrl.php
-    participant Mapper as 📝 TaskMapper.php /<br>TaskWorkflowGuard.php
-    participant Elastic as 🔎 TaskElasticMapper.php
-    participant DB as 🗄️ MySQL
-    participant ES as 🌐 Elasticsearch
+    participant UI as Client
+    participant Ctrl as TaskCtrl.php
+    participant Mapper as TaskMapper.php
+    participant Elastic as TaskElasticMapper.php
+    participant DB as MySQL
+    participant ES as Elasticsearch
 
-    UI->>Ctrl: 1. Gửi request HTTP
-    Ctrl->>Mapper: 2. Gọi hàm nghiệp vụ (createTask, updateTask, executeTransition...)
-    Mapper->>DB: 3. Lưu xuống database (gọi $this->completeTransOrFail())
-    DB-->>Mapper: 4. Trả về kết quả lưu thành công
-    Mapper->>Mapper: 5. Gọi hàm nội bộ $this->syncToElastic($siteID, $taskID)
-    Mapper->>Elastic: 6. Khởi tạo và gọi TaskElasticMapper::makeInstance()->update(...)
-    Elastic->>ES: 7. Thực thi REST API (Index/Update vào 'task' trên ES)
-    ES-->>Elastic: 8. Phản hồi từ ES
-    Elastic-->>Mapper: 
-    Mapper-->>Ctrl: 9. Trả kết quả (ví dụ: return result(true, ...))
-    Ctrl-->>UI: 10. API Trả về Response cho giao diện
+    UI->>Ctrl: HTTP Request
+    Ctrl->>Mapper: createTask() / updateTask()
+    Mapper->>DB: completeTransOrFail()
+    
+    Mapper->>Mapper: syncToElastic($useES)
+    
+    alt $useES == true
+        Mapper->>Elastic: update()
+        Elastic->>ES: Index API
+    else $useES == false
+        Mapper-->>Mapper: (skip)
+    end
+
+    Mapper-->>Ctrl: result()
+    Ctrl-->>UI: HTTP Response
 ```
+
+**Giải thích luồng chạy:**
+1. Client gửi HTTP Request gọi vào Controller (`TaskCtrl.php`).
+2. Controller gọi hàm nghiệp vụ của Mapper (ví dụ `createTask`, `updateTask`) để lưu dữ liệu vào MySQL.
+3. Sau khi lưu MySQL thành công, hệ thống gọi hàm `syncToElastic($useES)` để bắt đầu đồng bộ.
+4. **Kiểm tra cờ `$useES`:**
+   - Nếu là **`true`**: Dữ liệu sẽ được đẩy trực tiếp sang Elasticsearch thông qua `TaskElasticMapper`.
+   - Nếu là **`false`**: Bỏ qua quá trình đồng bộ (skip).
+5. Cuối cùng, API hoàn tất và trả về kết quả (HTTP Response) cho Client.

@@ -67,4 +67,47 @@ class TaskElasticMapper extends ElasticMapper {
         }
         return $this;
     }
+
+    /**
+     * Lấy báo cáo thống kê sử dụng Elasticsearch Aggregations
+     * @param string $siteID
+     * @return array
+     */
+    public function getTaskReport($siteID) {
+        $params = [
+            'index' => $this->index,
+            'body' => [
+                'size' => 0, // Không lấy documents, chỉ lấy aggregations
+                'query' => [
+                    'bool' => [
+                        'must' => [
+                            ['term' => ['siteFK.keyword' => $siteID]],
+                            ['term' => ['deleted' => 0]]
+                        ]
+                    ]
+                ],
+                'aggs' => [
+                    'tasks_by_status' => [
+                        'terms' => [
+                            'field' => 'status.keyword',
+                            'size' => 10
+                        ]
+                    ],
+                    'tasks_by_priority' => [
+                        'terms' => [
+                            'field' => 'priority.keyword',
+                            'size' => 10
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        try {
+            $response = $this->conn->search($params);
+            return $response['aggregations'] ?? [];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
 }

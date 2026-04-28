@@ -108,6 +108,26 @@ class TaskCtrl extends \Company\MVC\Controller {
     }
 
     /**
+     * Báo cáo thống kê sử dụng Elasticsearch
+     * GET /:siteID/rest/task/report
+     */
+    function getReport($siteID) {
+        try {
+            $this->auth->setSiteID($siteID);
+            $this->auth->requireLogin();
+            $this->auth->requireSite($siteID);
+
+            $elasticMapper = \Company\Task\Model\TaskElasticMapper::makeInstance();
+            $aggregations = $elasticMapper->getTaskReport($siteID);
+
+            $this->resp->setBody(json_encode(result(true, $aggregations)));
+        } catch (\Exception $e) {
+            $this->resp->setStatus(500);
+            $this->resp->setBody(json_encode(result(false, $e->getMessage(), 500)));
+        }
+    }
+
+    /**
      * Story 1.2 - Giao task cho cá nhân (assignee đơn)
      * POST /:siteID/rest/task/tasks/:taskID/assign/individual
      */
