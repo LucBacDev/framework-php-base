@@ -480,14 +480,11 @@ class TaskMapper extends \Company\SQL\Mapper {
                     $task['attrs'] = $decoded;
                 }
             }
-            $elasticMsg = TaskElasticMapper::makeInstance()->buildElasticMessage(
-                TaskElasticMapper::METHOD_UPDATE,
-                $task,
-                $taskID,
-                null,
-                ['updatedDate']
-            );
-            TaskElasticMapper::makeInstance()->addQueue($elasticMsg);
+            try {
+                TaskElasticMapper::makeInstance()->update($taskID, $task);
+            } catch (\Exception $e) {
+                // Log error if needed
+            }
         }
     }
 }
