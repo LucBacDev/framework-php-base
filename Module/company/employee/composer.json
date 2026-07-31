@@ -1,0 +1,9 @@
+{
+    "name": "company/employee",
+    "description": "Quản lý nhân sự",
+    "version": "1.0.0",
+    "type": "library",
+    "authors": [
+        { "name": "LucBacDev", "email": "lucbacit@gmail.com" }
+    ]
+}

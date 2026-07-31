@@ -82,6 +82,8 @@ class AdminLayout extends \Company\MVC\Layout {
 //        $this->loadUiModule(new \PacsUi\Report\UiLoader());
 //        $this->loadUiModule(new \PacsUi\Setting\UiLoader());
         $this->loadUiModule(new \CompanyUI\Service\UiLoader());
+        $this->loadUiModule(new \CompanyUI\Department\UiLoader());
+        $this->loadUiModule(new \CompanyUI\Employee\UiLoader());
 //        $this->loadUiModule(new \PacsUi\DicomTagMorphing\UiLoader());
 //        $this->loadUiModule(new \CompanyUI\Dict\UiLoader());
 //        $this->loadUiModule(new \PacsUi\Tool\UiLoader());
